@@ -8,16 +8,24 @@ Für das Verwenden wird [Docker](https://www.docker.com/products/docker-desktop/
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
+Alle folgende Befehle, die mit 'docker-compose' beginnen müssen in dem Ordner ausgeführt werden, der die `docker-compose.yml` beinhaltet.
+
 Zum starten der Application wird folgender Befehl verwendet:
 
 ```bash
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-Während der Entwicklung kann folgender Befehl verwendet werden
+Während der Entwicklung kann folgender Befehl verwendet werden:
 
 ```bash
 docker-compose up -d
+```
+
+Zum Beenden kann folgender Befehl verwendet werden:
+
+```bash
+docker-compose down
 ```
 
 ## MQTT
