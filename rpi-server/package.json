@@ -5,8 +5,8 @@
   "main": "main.ts",
   "scripts": {
     "build": "npx tsc",
-    "start": "node dist/main.js",
-    "dev": "npx nodemon main.ts"
+    "start": "NODE_PATH=./dist node dist/main.js",
+    "dev": "npx nodemon src/main.ts"
   },
   "keywords": [],
   "author": "",
