@@ -5,6 +5,22 @@ import SMTPTransport from 'nodemailer/lib/smtp-transport';
 let transporter: Transporter | undefined;
 let sender: string | undefined;
 
+interface MailReturn {
+	accepted: string[];
+	rejected: string[];
+	ehlo: string[];
+	rejectedErrors: any[] | undefined;
+	envelopeTime: number;
+	messageTime: number;
+	messageSize: number;
+	response: string;
+	envelope: {
+		from: string;
+		to: string[];
+	};
+	messageId: string;
+}
+
 function readFromConfigFile() {
 	try {
 		const file = readFileSync('data/mail.json');
@@ -39,7 +55,11 @@ export async function isTransportOk(): Promise<boolean> {
 	});
 }
 
-export async function sendMessage(to: string[], subject: string, text: string) {
+export async function sendMessage(
+	to: string[],
+	subject: string,
+	text: string
+): Promise<MailReturn> {
 	return new Promise(async (resolve, reject) => {
 		if (to.length <= 0) {
 			reject(new Error('No target for message proviede'));
@@ -54,15 +74,15 @@ export async function sendMessage(to: string[], subject: string, text: string) {
 			return;
 		}
 
-		//TODO: Set datatype
-		let info;
+		//TODO: Handle rejected recipients
 		try {
-			info = await transporter!.sendMail({
+			const info: MailReturn = await transporter!.sendMail({
 				from: sender,
 				to: to.join(', '),
 				subject,
 				text,
 			});
+			resolve(info);
 		} catch (err) {
 			//TODO: Make Error more readable
 			reject(err);
