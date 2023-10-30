@@ -1,3 +1,1 @@
-.dockerignore
-node_modules
-Dockerfile
+rpi-server/node_modules
