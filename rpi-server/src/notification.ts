@@ -30,13 +30,26 @@ function readFromConfigFile() {
 		if (!('transporter' in data))
 			throw new Error("mail.json has no attribute 'transporter'");
 
-		let transporterObj: SMTPTransport = data['transporter'];
-
-		sender = transporterObj.auth.user;
-		transporter = createTransport(transporterObj);
+		if (!updateTransporter(data['transporter'])) {
+			console.info(
+				"Couldn't read mail.json file. Mail transporter is undefined"
+			);
+		}
 	} catch (error) {
 		console.error(error);
 		return;
+	}
+}
+export function updateTransporter(options: SMTPTransport.Options): boolean {
+	// TODO: Make some fields required for setting a transporter
+
+	try {
+		sender = options.auth?.user;
+		transporter = createTransport(options);
+		return true;
+	} catch (error) {
+		console.error(error);
+		return false;
 	}
 }
 readFromConfigFile();
