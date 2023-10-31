@@ -1,6 +1,8 @@
 import { Transporter, createTransport } from 'nodemailer';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
+
+const CONFIG_FILE = 'data/mail.json';
 
 let transporter: Transporter | undefined;
 let sender: string | undefined;
@@ -23,14 +25,14 @@ interface MailReturn {
 
 function readFromConfigFile() {
 	try {
-		const file = readFileSync('data/mail.json');
+		const file = readFileSync(CONFIG_FILE);
 		if (file.buffer.byteLength <= 0) throw new Error('File is empty');
 
 		let data = JSON.parse(file.toString());
 		if (!('transporter' in data))
 			throw new Error("mail.json has no attribute 'transporter'");
 
-		if (!updateTransporter(data['transporter'])) {
+		if (!_updateTransporter(data['transporter'])) {
 			console.info(
 				"Couldn't read mail.json file. Mail transporter is undefined"
 			);
@@ -40,7 +42,24 @@ function readFromConfigFile() {
 		return;
 	}
 }
+/**
+ * Updating the transporter and updating the config file
+ * @param options Options for the transpoter
+ * @returns true: if transporter has been created successfully
+ */
 export function updateTransporter(options: SMTPTransport.Options): boolean {
+	const result = _updateTransporter(options);
+
+	if (result) writeFileSync(CONFIG_FILE, JSON.stringify(options));
+
+	return result;
+}
+/**
+ * Updating the transporter without writing to the file
+ * @param options Options for the transpoter
+ * @returns true: if transporter has been created successfully
+ */
+function _updateTransporter(options: SMTPTransport.Options): boolean {
 	// TODO: Make some fields required for setting a transporter
 
 	try {
