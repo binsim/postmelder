@@ -1,4 +1,9 @@
-import express, {Express, Request, Response} from 'express';
+import express, { Express, Request, Response } from 'express';
+import { config } from 'dotenv';
+import './mqttService';
+
+// Importend for using .env variables
+config();
 
 const PORT = 8080;
 
@@ -10,4 +15,4 @@ app.get('/', (req: Request, res: Response) => {
 
 app.listen(PORT, () => {
 	console.log(`Server is running at http://localhost:${PORT}`);
-})
+});
