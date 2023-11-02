@@ -9,6 +9,7 @@ export interface IMQTTService {
 	updateDevice(device: IDevice): void;
 
 	onConnectionStateChanged(callback: (isConnected: boolean) => void): void;
+	onDeviceAdded(callback: (device: IDevice) => void): void;
 }
 export class MQTTService implements IMQTTService {
 	private _devices: IDevice[];
@@ -18,6 +19,7 @@ export class MQTTService implements IMQTTService {
 	private _connectionStateChangedHandler:
 		| ((isConnected: boolean) => void)
 		| undefined;
+	private _deviceAddedHandler: ((device: IDevice) => void) | undefined;
 
 	constructor() {
 		this._devices = loadFromFile();
@@ -74,6 +76,9 @@ export class MQTTService implements IMQTTService {
 	onConnectionStateChanged(callback: (isConnected: boolean) => void): void {
 		this._connectionStateChangedHandler = callback;
 	}
+	onDeviceAdded(callback: (device: IDevice) => void): void {
+		this._deviceAddedHandler = callback;
+	}
 
 	private onMessageArrived(topic: string, payload: Buffer) {
 		if (topic === '/devices') {
@@ -84,6 +89,9 @@ export class MQTTService implements IMQTTService {
 
 			if (this.getDeviceByID(id)) {
 				this._devices.push(new Device(id));
+
+				if (this._deviceAddedHandler)
+					this._deviceAddedHandler(this._devices.at(-1) as IDevice);
 
 				// Write to file after not adding a new device for 15 secs
 				if (this._deviceSaveToFileTimeout)
