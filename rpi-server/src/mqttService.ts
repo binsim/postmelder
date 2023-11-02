@@ -28,7 +28,7 @@ export class MQTTService implements IMQTTService {
 	}
 
 	private get client(): MqttClient {
-		if (!this.client)
+		if (!this._client)
 			throw new Error(
 				'Client is not connected, please execute connect function first'
 			);
