@@ -9,12 +9,15 @@ services:
     volumes:
       - ./rpi-server/src:/usr/src/app/src
       - ./rpi-server/nodemon.json:/usr/src/app/nodemon.json
+      - ./rpi-server/data:/usr/src/app/data
     container_name: node 
     expose:
       - '8080'
     ports:
       - '8080:8080'
     command: npm run dev
+    env_file:
+      - ./.env
     depends_on:
       - mqtt
   

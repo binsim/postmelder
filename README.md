@@ -37,7 +37,7 @@ Zum setzen des Passworts für einen $USERNAME, folgenden Befehl ausführen. Dies
 Dieser Befehl muss im Ordner ausgeführt werden, in der auch die `docker-compose.yml` Datei liegt
 
 ```bash
-docker-compose exec mqtt mosquitto_passwd -c /mosquitto/conf/mosquitto.passwd $USERNAME
+docker-compose exec mqtt mosquitto_passwd -c /mosquitto/config/mosquitto.passwd $USERNAME
 ```
 
 # Einstellungen
