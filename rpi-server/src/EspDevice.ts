@@ -83,11 +83,16 @@ export class Device implements IDevice {
 export function loadFromFile(): IDevice[] {
 	try {
 		const file = readFileSync(CONFIG_FILE);
-		if (file.buffer.byteLength <= 0) throw new Error('File is empty');
+		if (file.buffer.byteLength <= 0) return [];
 
 		return JSON.parse(file.toString()) as IDevice[];
 	} catch (error) {
-		console.log(error);
+		let err = error as Error;
+		if (err.message.includes('no such file or directory, open')) {
+			// File doesn't exist
+			return [];
+		}
+		console.error(err.message);
 		return [];
 	}
 }
