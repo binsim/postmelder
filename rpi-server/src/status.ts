@@ -24,11 +24,15 @@ export function setState(state: State) {
 	switch (state) {
 		case 'ok':
 			write(G_PIN, HIGH);
+			write(R_PIN, LOW);
+			write(B_PIN, LOW);
 			break;
 		case 'esp-disconnected':
 			write(B_PIN, HIGH);
+			write(G_PIN, LOW);
 			break;
 		case 'networkError':
 			write(R_PIN, HIGH);
+			write(G_PIN, LOW);
 	}
 }
