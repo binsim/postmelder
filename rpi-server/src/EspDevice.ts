@@ -87,7 +87,12 @@ export function loadFromFile(): IDevice[] {
 
 		return JSON.parse(file.toString()) as IDevice[];
 	} catch (error) {
-		console.log(error);
+		let err = error as Error;
+		if (err.message.includes('no such file or directory, open')) {
+			// File doesn't exist
+			return [];
+		}
+		console.error(err.message);
 		return [];
 	}
 }
