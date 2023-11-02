@@ -4,6 +4,9 @@ on:
     push:
         paths:
             - 'rpi-server/**'
+    pull_request:
+        branches:
+            - main
 
 jobs:
     build:
