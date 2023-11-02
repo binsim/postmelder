@@ -1,3 +1,6 @@
+![Esp-Client](https://github.com/binsim/postmelder/actions/workflows/PlatformIO.yml/badge.svg)
+![Rpi-Server](https://github.com/binsim/postmelder/actions/workflows/Node.yml/badge.svg)
+
 # Installation
 
 ## Docker
