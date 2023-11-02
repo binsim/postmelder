@@ -15,7 +15,7 @@ mqttService.connect();
 
 let connectionTestIntervall: NodeJS.Timeout = setInterval(() => {
 	if (!mqttService.isConnected) {
-		setState('networkError');
+		setState('internalNetworkError');
 	}
 }, 10_000);
 //#region API

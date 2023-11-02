@@ -10,7 +10,11 @@ open(R_PIN, OUTPUT, LOW);
 open(G_PIN, OUTPUT, LOW);
 open(B_PIN, OUTPUT, LOW);
 
-type State = 'ok' | 'networkError' | 'esp-disconnected' | 'undefined';
+type State =
+	| 'ok'
+	| 'externalNetworkError'
+	| 'internalNetworkError'
+	| 'undefined';
 
 let currentState: State;
 export function setState(state: State) {
@@ -27,11 +31,11 @@ export function setState(state: State) {
 			write(R_PIN, LOW);
 			write(B_PIN, LOW);
 			break;
-		case 'esp-disconnected':
+		case 'internalNetworkError':
 			write(B_PIN, HIGH);
 			write(G_PIN, LOW);
 			break;
-		case 'networkError':
+		case 'externalNetworkError':
 			write(R_PIN, HIGH);
 			write(G_PIN, LOW);
 	}
