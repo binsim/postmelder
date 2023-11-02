@@ -3,14 +3,21 @@ import { Device, IDevice, loadFromFile, saveToFile } from './EspDevice';
 
 export interface IMQTTService {
 	get devices(): IDevice[];
+	get isConnected(): boolean;
 
 	getDeviceByID(id: string): IDevice | undefined;
 	updateDevice(device: IDevice): void;
+
+	onConnectionStateChanged(callback: (isConnected: boolean) => void): void;
 }
 export class MQTTService implements IMQTTService {
 	private _devices: IDevice[];
 	private _client: MqttClient;
 	private _deviceSaveToFileTimeout: NodeJS.Timeout | undefined = undefined;
+	private _isConnected = false;
+	private _connectionStateChangedHandler:
+		| ((isConnected: boolean) => void)
+		| undefined;
 
 	constructor() {
 		this._devices = loadFromFile();
@@ -20,17 +27,30 @@ export class MQTTService implements IMQTTService {
 		});
 
 		this._client.on('error', (err: Error) => {
+			this.isConnected = false;
 			// TODO: Handle Error
 		});
 		this._client.on('connect', () => {
 			// Subscribe to get all devices
 			this._client.subscribe('/devices');
+
+			this.isConnected = true;
 		});
 		this._client.on('message', this.onMessageArrived);
 	}
 
 	get devices() {
 		return this._devices;
+	}
+	get isConnected() {
+		return this._isConnected;
+	}
+	private set isConnected(value: boolean) {
+		if (value === this._isConnected) return;
+
+		this._isConnected = value;
+		if (this._connectionStateChangedHandler)
+			this._connectionStateChangedHandler(this._isConnected);
 	}
 
 	getDeviceByID(id: string): IDevice | undefined {
@@ -49,6 +69,10 @@ export class MQTTService implements IMQTTService {
 		} else {
 			this._devices[index] = device;
 		}
+	}
+
+	onConnectionStateChanged(callback: (isConnected: boolean) => void): void {
+		this._connectionStateChangedHandler = callback;
 	}
 
 	private onMessageArrived(topic: string, payload: Buffer) {
