@@ -5,6 +5,8 @@ export interface IMQTTService {
 	get devices(): IDevice[];
 	get isConnected(): boolean;
 
+	connect(): void;
+
 	getDeviceByID(id: string): IDevice | undefined;
 	updateDevice(device: IDevice): void;
 
@@ -13,7 +15,7 @@ export interface IMQTTService {
 }
 export class MQTTService implements IMQTTService {
 	private _devices: IDevice[];
-	private _client: MqttClient;
+	private _client: MqttClient | undefined;
 	private _deviceSaveToFileTimeout: NodeJS.Timeout | undefined = undefined;
 	private _isConnected = false;
 	private _connectionStateChangedHandler:
@@ -23,24 +25,15 @@ export class MQTTService implements IMQTTService {
 
 	constructor() {
 		this._devices = loadFromFile();
-		this._client = connect('mqtt://mqtt', {
-			username: process.env.MQTT_USERNAME,
-			password: process.env.MQTT_PASSWORD,
-		});
-
-		this._client.on('error', (err: Error) => {
-			this.isConnected = false;
-			// TODO: Handle Error
-		});
-		this._client.on('connect', () => {
-			// Subscribe to get all devices
-			this._client.subscribe('/devices');
-
-			this.isConnected = true;
-		});
-		this._client.on('message', this.onMessageArrived);
 	}
 
+	private get client(): MqttClient {
+		if (!this.client)
+			throw new Error(
+				'Client is not connected, please execute connect function first'
+			);
+		return this._client as MqttClient;
+	}
 	get devices() {
 		return this._devices;
 	}
@@ -53,6 +46,25 @@ export class MQTTService implements IMQTTService {
 		this._isConnected = value;
 		if (this._connectionStateChangedHandler)
 			this._connectionStateChangedHandler(this._isConnected);
+	}
+
+	connect() {
+		this._client = connect('mqtt://mqtt', {
+			username: process.env.MQTT_USERNAME,
+			password: process.env.MQTT_PASSWORD,
+		});
+
+		this._client.on('error', (err: Error) => {
+			this.isConnected = false;
+			// TODO: Handle Error
+		});
+		this._client.on('connect', () => {
+			// Subscribe to get all devices
+			this.client.subscribe('/devices');
+
+			this.isConnected = true;
+		});
+		this._client.on('message', this.onMessageArrived);
 	}
 
 	getDeviceByID(id: string): IDevice | undefined {
@@ -85,7 +97,7 @@ export class MQTTService implements IMQTTService {
 			const id = payload.toString();
 
 			// Subscribe to all topics for this device
-			this._client.subscribe(`/${id}/#`);
+			this.client.subscribe(`/${id}/#`);
 
 			if (this.getDeviceByID(id)) {
 				this._devices.push(new Device(id));
@@ -102,7 +114,7 @@ export class MQTTService implements IMQTTService {
 			}
 
 			// Respond to client to let it know it has been registered
-			this._client.publish(`/${id}`, '');
+			this.client.publish(`/${id}`, '');
 			return;
 		}
 
