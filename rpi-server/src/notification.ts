@@ -38,6 +38,14 @@ function readFromConfigFile() {
 			);
 		}
 	} catch (error) {
+		let err = error as Error;
+		if (err.message.includes('no such file or directory, open')) {
+			// Transporter stays undefined, can be configured later
+			console.info(
+				"Notification not configured, can't send messages to client"
+			);
+			return;
+		}
 		console.error(error);
 		return;
 	}
