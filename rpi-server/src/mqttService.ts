@@ -99,7 +99,7 @@ export class MQTTService implements IMQTTService {
 			// Subscribe to all topics for this device
 			this.client.subscribe(`/${id}/#`);
 
-			if (this.getDeviceByID(id)) {
+			if (!this.getDeviceByID(id)) {
 				this._devices.push(new Device(id));
 
 				if (this._deviceAddedHandler)
