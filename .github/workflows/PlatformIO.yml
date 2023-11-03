@@ -1,4 +1,4 @@
-name: ESP-Server
+name: ESP-Client
 
 on:
     push:
