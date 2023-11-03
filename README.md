@@ -42,3 +42,7 @@ Dieser Befehl muss im Ordner ausgeführt werden, in der auch die `docker-compose
 ```bash
 docker-compose exec mqtt mosquitto_passwd -c /mosquitto/config/mosquitto.passwd $USERNAME
 ```
+
+## RP als Accesspoint
+
+Ich teste mal
