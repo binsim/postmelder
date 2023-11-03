@@ -2,6 +2,8 @@ name: ESP-Client
 
 on:
     push:
+        branches:
+            - main
         paths:
             - 'esp-client/**'
     pull_request:

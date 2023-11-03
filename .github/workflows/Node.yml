@@ -2,6 +2,8 @@ name: Rpi-Server
 
 on:
     push:
+        branches:
+            - main
         paths:
             - 'rpi-server/**'
     pull_request:
