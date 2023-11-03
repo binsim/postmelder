@@ -1,6 +1,7 @@
 import { test, describe, expect } from '@jest/globals';
 import { MQTTService } from './mqttService';
 import { MqttClient } from 'mqtt/*';
+import { IDevice } from './EspDevice';
 
 jest.useFakeTimers();
 
@@ -15,10 +16,15 @@ describe('MQTTService', () => {
 	const deviceID = 'ID:1234';
 
 	test('Connect new device', () => {
+		let newDevice: IDevice | undefined;
+
+		service.onDeviceAdded((deivce) => (newDevice = deivce));
+
 		(service as any).onMessageArrived('/devices', Buffer.from(deviceID));
 
 		jest.runAllTimers();
 
+		expect(newDevice?.id).toBe(deviceID);
 		expect(service.devices.at(-1)?.id).toBe(deviceID);
 	});
 
