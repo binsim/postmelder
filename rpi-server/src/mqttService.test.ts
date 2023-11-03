@@ -57,4 +57,38 @@ describe('MQTTService', () => {
 		expect(isOnline).toBe(false);
 		expect(device?.isOnline).toBe(false);
 	});
+
+	test('Device occupied message', () => {
+		const device = service.getDeviceByID(deviceID);
+
+		let isOccupied = false;
+
+		device?.onOccupiedChanged((value) => (isOccupied = value));
+		(service as any).onMessageArrived(`/${deviceID}/status`, 'occupied');
+
+		expect(isOccupied).toBe(true);
+		expect(device?.isOccupied).toBe(true);
+	});
+	test('Device free message', () => {
+		const device = service.getDeviceByID(deviceID);
+
+		let isOccupied = true;
+
+		device?.onOccupiedChanged((value) => (isOccupied = value));
+		(service as any).onMessageArrived(`/${deviceID}/status`, 'free');
+
+		expect(isOccupied).toBe(false);
+		expect(device?.isOccupied).toBe(false);
+	});
+	test('Wrong status Message', () => {
+		const device = service.getDeviceByID(deviceID);
+
+		let isOccupied = false;
+
+		device?.onOccupiedChanged((value) => (isOccupied = value));
+		(service as any).onMessageArrived(`/${deviceID}/status`, 'Wrong');
+
+		expect(isOccupied).toBe(true);
+		expect(device?.isOccupied).toBe(true);
+	});
 });
