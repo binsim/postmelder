@@ -1,42 +1,65 @@
 import { init, open, write, OUTPUT, LOW, HIGH } from 'rpio';
+import { IDevice } from './EspDevice';
 
-const R_PIN = 1;
-const G_PIN = 1;
-const B_PIN = 1;
+export interface IStateService {
+	get externalError(): boolean;
+	get internalError(): boolean;
+	get isOk(): boolean;
 
-init({ close_on_exit: true, mapping: 'gpio' });
+	addDeviceListener(device: IDevice): void;
+	mqttOnlineStateChanged(isConnected: boolean): void;
+}
+export class StateService implements IStateService {
+	private r_pin = 1;
+	private g_pin = 1;
+	private b_pin = 1;
 
-open(R_PIN, OUTPUT, LOW);
-open(G_PIN, OUTPUT, LOW);
-open(B_PIN, OUTPUT, LOW);
+	private deviceList: IDevice[] = [];
+	private _externalError = false;
 
-type State =
-	| 'ok'
-	| 'externalNetworkError'
-	| 'internalNetworkError'
-	| 'undefined';
+	constructor() {
+		init({ close_on_exit: true, mapping: 'gpio' });
 
-let currentState: State;
-export function setState(state: State) {
-	if (currentState === state) return;
+		// Define Pins as output
+		open(this.r_pin, OUTPUT, LOW);
+		open(this.g_pin, OUTPUT, LOW);
+		open(this.b_pin, OUTPUT, LOW);
 
-	// Uncomment if only one state can be shown
-	// write(R_PIN, LOW);
-	// write(G_PIN, LOW);
-	// write(B_PIN, LOW);
+		this.updateColor();
+	}
 
-	switch (state) {
-		case 'ok':
-			write(G_PIN, HIGH);
-			write(R_PIN, LOW);
-			write(B_PIN, LOW);
-			break;
-		case 'internalNetworkError':
-			write(B_PIN, HIGH);
-			write(G_PIN, LOW);
-			break;
-		case 'externalNetworkError':
-			write(R_PIN, HIGH);
-			write(G_PIN, LOW);
+	get externalError() {
+		return this._externalError;
+	}
+	get internalError() {
+		return this.deviceList.length > 0;
+	}
+	get isOk() {
+		return !this.externalError && !this.internalError;
+	}
+
+	addDeviceListener(device: IDevice) {
+		device.onOnlineChanged((value) => {
+			if (value) {
+				this.deviceList.push(device);
+			} else {
+				this.deviceList.splice(
+					this.deviceList.indexOf(device) as number,
+					1
+				);
+			}
+			this.updateColor();
+		});
+	}
+
+	mqttOnlineStateChanged(isConnected: boolean) {
+		this._externalError = !isConnected;
+		this.updateColor();
+	}
+
+	private updateColor() {
+		write(this.r_pin, this.externalError ? HIGH : LOW);
+		write(this.g_pin, this.isOk ? HIGH : LOW);
+		write(this.b_pin, this.internalError ? HIGH : LOW);
 	}
 }
