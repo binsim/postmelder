@@ -28,7 +28,7 @@ export class MQTTService implements IMQTTService {
 	}
 
 	private get client(): MqttClient {
-		if (!this.client)
+		if (!this._client)
 			throw new Error(
 				'Client is not connected, please execute connect function first'
 			);
@@ -99,7 +99,7 @@ export class MQTTService implements IMQTTService {
 			// Subscribe to all topics for this device
 			this.client.subscribe(`/${id}/#`);
 
-			if (this.getDeviceByID(id)) {
+			if (!this.getDeviceByID(id)) {
 				this._devices.push(
 					// Create new device with no information
 					new Device({
