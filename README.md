@@ -116,8 +116,7 @@ range müssen wir dann vielleicht noch einstellen. Habs aber fürs erste so gela
 ```bash
   sudo nano /etc/dhcpcd.conf
 ```
-Datei nicht gefunden! Neue Datei erstellt mit:
-Lines added:
+Datei nicht gefunden! Folgende Zeilen sollten hinzugefügt werden
 ```bash
 nohook wpa_supplicant
 interface wlan0
