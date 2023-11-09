@@ -3,7 +3,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const CONFIG_FILE = 'data/esp-clients.json';
 
 interface JSON_Device {
-	get id(): string;
+	id: string;
+	subscriber: string[];
+	notificationTitle: string;
+	notificationBody: string;
 }
 
 export interface IDevice extends JSON_Device {
@@ -15,7 +18,7 @@ export interface IDevice extends JSON_Device {
 }
 
 export class Device implements IDevice {
-	private readonly _id: string;
+	private _device: JSON_Device;
 	private _isOnline: boolean = false;
 	private _isOccupied: boolean = false;
 
@@ -25,8 +28,8 @@ export class Device implements IDevice {
 	private _onOccupiedChangedHandler: ((state: boolean) => void) | undefined =
 		undefined;
 
-	constructor(id: string) {
-		this._id = id;
+	constructor(device: JSON_Device) {
+		this._device = device;
 	}
 
 	_onMessageArrived(topic: string, payload: Buffer) {
@@ -70,7 +73,25 @@ export class Device implements IDevice {
 	}
 
 	get id() {
-		return this._id;
+		return this._device.id;
+	}
+	get subscriber() {
+		return this._device.subscriber;
+	}
+	set subscriber(value) {
+		this._device.subscriber = value;
+	}
+	get notificationBody() {
+		return this._device.notificationBody;
+	}
+	set notificationBody(value) {
+		this._device.notificationBody;
+	}
+	get notificationTitle() {
+		return this._device.notificationTitle;
+	}
+	set notificationTitle(value) {
+		this._device.notificationTitle;
 	}
 	get isOnline() {
 		return this._isOnline;

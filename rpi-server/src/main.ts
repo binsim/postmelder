@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { config } from 'dotenv';
 import { IMQTTService, MQTTService } from './mqttService';
+import { sendMessage } from './notification';
 
 //#region Setup
 // Importend for using .env variables
@@ -10,6 +11,18 @@ const app: Express = express();
 
 const mqttService: IMQTTService = new MQTTService();
 mqttService.connect();
+
+mqttService.devices.forEach((device) => {
+	device.onOccupiedChanged((status) => {
+		if (status)
+			// Every device has it's own notification information saved
+			sendMessage(
+				device.subscriber,
+				device.notificationTitle,
+				device.notificationBody
+			);
+	});
+});
 //#endregion Setup
 
 //#region API
