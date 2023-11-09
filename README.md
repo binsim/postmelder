@@ -45,7 +45,7 @@ docker-compose exec mqtt mosquitto_passwd -c /mosquitto/config/mosquitto.passwd 
 
 ## RP als Accesspoint
 
-Allgemeine Konfiguration Raspberry:
+### Allgemeine Konfiguration Raspberry:
 
 Hostname: postmelder
 
