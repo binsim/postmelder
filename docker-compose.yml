@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: base
+    privileged: true
     volumes:
       - ./rpi-server/src:/usr/src/app/src
       - ./rpi-server/nodemon.json:/usr/src/app/nodemon.json

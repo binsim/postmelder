@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import { config } from 'dotenv';
 import { IMQTTService, MQTTService } from './mqttService';
 import { sendMessage } from './notification';
+import { StateService, IStateService } from './status';
 
 //#region Setup
 // Importend for using .env variables
@@ -9,20 +10,23 @@ config();
 const PORT = 8080;
 const app: Express = express();
 
-const mqttService: IMQTTService = new MQTTService();
-mqttService.connect();
+const stateService: IStateService = new StateService();
 
-mqttService.devices.forEach((device) => {
+const mqttService: IMQTTService = new MQTTService();
+mqttService.onConnectionStateChanged(stateService.mqttOnlineStateChanged);
+mqttService.onDeviceAdded((device) => {
 	device.onOccupiedChanged((status) => {
-		if (status)
-			// Every device has it's own notification information saved
+		if (status) {
 			sendMessage(
 				device.subscriber,
 				device.notificationTitle,
 				device.notificationBody
 			);
+		}
 	});
+	stateService.addDeviceListener(device);
 });
+mqttService.connect();
 //#endregion Setup
 
 //#region API
