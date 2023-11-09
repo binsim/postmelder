@@ -14,19 +14,19 @@ const stateService: IStateService = new StateService();
 
 const mqttService: IMQTTService = new MQTTService();
 mqttService.onConnectionStateChanged(stateService.mqttOnlineStateChanged);
-mqttService.connect();
-
-mqttService.devices.forEach((device) => {
+mqttService.onDeviceAdded((device) => {
 	device.onOccupiedChanged((status) => {
-		if (status)
-			// Every device has it's own notification information saved
+		if (status) {
 			sendMessage(
 				device.subscriber,
 				device.notificationTitle,
 				device.notificationBody
 			);
+		}
 	});
+	stateService.addDeviceListener(device);
 });
+mqttService.connect();
 //#endregion Setup
 
 //#region API
