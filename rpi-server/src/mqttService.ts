@@ -100,7 +100,15 @@ export class MQTTService implements IMQTTService {
 			this.client.subscribe(`/${id}/#`);
 
 			if (!this.getDeviceByID(id)) {
-				this._devices.push(new Device(id));
+				this._devices.push(
+					// Create new device with no information
+					new Device({
+						id,
+						subscriber: [],
+						notificationTitle: '',
+						notificationBody: '',
+					})
+				);
 
 				if (this._deviceAddedHandler)
 					this._deviceAddedHandler(this._devices.at(-1) as IDevice);

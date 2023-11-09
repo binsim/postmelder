@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { config } from 'dotenv';
 import { IMQTTService, MQTTService } from './mqttService';
+import { sendMessage } from './notification';
 import { StateService, IStateService } from './status';
 
 //#region Setup
@@ -14,6 +15,18 @@ const stateService: IStateService = new StateService();
 const mqttService: IMQTTService = new MQTTService();
 mqttService.onConnectionStateChanged(stateService.mqttOnlineStateChanged);
 mqttService.connect();
+
+mqttService.devices.forEach((device) => {
+	device.onOccupiedChanged((status) => {
+		if (status)
+			// Every device has it's own notification information saved
+			sendMessage(
+				device.subscriber,
+				device.notificationTitle,
+				device.notificationBody
+			);
+	});
+});
 //#endregion Setup
 
 //#region API
