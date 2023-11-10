@@ -10,6 +10,9 @@ config();
 const PORT = 8080;
 const app: Express = express();
 
+// set the view engine to ejs
+app.set('view engine', 'ejs');
+
 const stateService: IStateService = new StateService();
 
 const mqttService: IMQTTService = new MQTTService();
@@ -31,7 +34,7 @@ mqttService.connect();
 
 //#region API
 app.get('/', (req: Request, res: Response) => {
-	res.send('Express + TypeScript Server');
+	res.render('pages/index');
 });
 //#endregion API
 
