@@ -1,12 +1,12 @@
 import { test, describe, expect } from '@jest/globals';
-import { MQTTService } from './mqttService';
+import { IMQTTService, MQTTService } from './mqttService';
 import { MqttClient } from 'mqtt/*';
 import { IDevice } from './EspDevice';
 
 jest.useFakeTimers();
 
 describe('MQTTService', () => {
-	const service = new MQTTService();
+	const service: IMQTTService = new MQTTService();
 	while (service.devices.pop()) {}
 	(service as any)._client = {
 		publish: function (topic: string, message: string) {},
@@ -18,7 +18,7 @@ describe('MQTTService', () => {
 	test('Connect new device', () => {
 		let newDevice: IDevice | undefined;
 
-		service.onDeviceAdded((deivce) => (newDevice = deivce));
+		service.on('deviceAdded', (device) => (newDevice = device));
 
 		(service as any).onMessageArrived('/devices', Buffer.from(deviceID));
 
