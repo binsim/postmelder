@@ -16,8 +16,10 @@ app.set('view engine', 'ejs');
 const stateService: IStateService = new StateService();
 
 const mqttService: IMQTTService = new MQTTService();
-mqttService.onConnectionStateChanged(stateService.mqttOnlineStateChanged);
-mqttService.onDeviceAdded((device) => {
+mqttService.on('connectionChanged', (value) =>
+	stateService.mqttOnlineStateChanged(value)
+);
+mqttService.on('deviceAdded', (device) => {
 	device.onOccupiedChanged((status) => {
 		if (status) {
 			sendMessage(
