@@ -1,4 +1,7 @@
 <div class="notServiceConf">
+	<script>
+		var DEFAULT_SMTP_PORT = <%= mailConf.DEFAULT_SMTP_PORT %>
+	</script>
 	<form action="/notServiceConf" method="post">
 		<div class="grid-container">
 			<div class="grid-item">
@@ -20,6 +23,7 @@
 					name="port"
 					id="port"
 					value="<%= mailConf.port ?? mailConf.DEFUALT_SMTP_PORT %>"
+					min="0"
 				/>
 			</div>
 			<div class="grid-item">
