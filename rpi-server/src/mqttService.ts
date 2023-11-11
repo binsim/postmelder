@@ -1,7 +1,8 @@
 import { MqttClient, connect } from 'mqtt';
 import { Device, IDevice, loadFromFile, saveToFile } from './EspDevice';
+import EventEmitter from 'node:events';
 
-export interface IMQTTService {
+export declare interface IMQTTService {
 	get devices(): IDevice[];
 	get isConnected(): boolean;
 
@@ -10,20 +11,17 @@ export interface IMQTTService {
 	getDeviceByID(id: string): IDevice | undefined;
 	updateDevice(device: IDevice): void;
 
-	onConnectionStateChanged(callback: (isConnected: boolean) => void): void;
-	onDeviceAdded(callback: (device: IDevice) => void): void;
+	on(event: 'connectionChanged', callback: (value: boolean) => void): void;
+	on(event: 'deviceAdded', callback: (device: IDevice) => void): void;
 }
-export class MQTTService implements IMQTTService {
+export class MQTTService extends EventEmitter implements IMQTTService {
 	private _devices: IDevice[];
 	private _client: MqttClient | undefined;
 	private _deviceSaveToFileTimeout: NodeJS.Timeout | undefined = undefined;
 	private _isConnected = false;
-	private _connectionStateChangedHandler:
-		| ((isConnected: boolean) => void)
-		| undefined;
-	private _deviceAddedHandler: ((device: IDevice) => void) | undefined;
 
 	constructor() {
+		super();
 		this._devices = loadFromFile();
 	}
 
@@ -44,8 +42,7 @@ export class MQTTService implements IMQTTService {
 		if (value === this._isConnected) return;
 
 		this._isConnected = value;
-		if (this._connectionStateChangedHandler)
-			this._connectionStateChangedHandler(this._isConnected);
+		this.emit('connectionChanged', this._isConnected);
 	}
 
 	connect() {
@@ -85,13 +82,6 @@ export class MQTTService implements IMQTTService {
 		}
 	}
 
-	onConnectionStateChanged(callback: (isConnected: boolean) => void): void {
-		this._connectionStateChangedHandler = callback;
-	}
-	onDeviceAdded(callback: (device: IDevice) => void): void {
-		this._deviceAddedHandler = callback;
-	}
-
 	private onMessageArrived(topic: string, payload: Buffer) {
 		if (topic === '/devices') {
 			const id = payload.toString();
@@ -100,10 +90,17 @@ export class MQTTService implements IMQTTService {
 			this.client.subscribe(`/${id}/#`);
 
 			if (!this.getDeviceByID(id)) {
-				this._devices.push(new Device(id));
+				this._devices.push(
+					// Create new device with no information
+					new Device({
+						id,
+						subscriber: [],
+						notificationTitle: '',
+						notificationBody: '',
+					})
+				);
 
-				if (this._deviceAddedHandler)
-					this._deviceAddedHandler(this._devices.at(-1) as IDevice);
+				this.emit('deviceAdded', this._devices.at(-1) as IDevice);
 
 				// Write to file after not adding a new device for 15 secs
 				if (this._deviceSaveToFileTimeout)
