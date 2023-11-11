@@ -11,7 +11,6 @@ interface INotificationConfig {
 	host: string;
 	port?: number;
 	secure: boolean;
-	tls?: { ciphers: string };
 }
 export class NotificationService {
 	private static _instance: NotificationService;
@@ -65,6 +64,16 @@ export class NotificationService {
 			});
 		});
 	}
+	static testConfig(config: INotificationConfig) {
+		return new Promise((resolve, reject) => {
+			let options = this.getOptionsFromConfig(config);
+			let transporter = createTransport(options);
+
+			transporter.verify((err) => {
+				resolve(!err);
+			});
+		});
+	}
 
 	sendMessage(
 		to: string[],
@@ -105,27 +114,30 @@ export class NotificationService {
 		});
 	}
 	updateConfig(config: INotificationConfig, writeToFile = true) {
-		this.transporter = createTransport(this.getOptionsFromConfig(config));
+		this.transporter = createTransport(
+			NotificationService.getOptionsFromConfig(config)
+		);
 		this.conf = config;
 		if (writeToFile)
 			writeFileSync(CONFIG_FILE, JSON.stringify({ transporter: config }));
 	}
 
-	private getOptionsFromConfig(
-		config: INotificationConfig
-	): SMTPTransport.Options {
-		return {
+	private static getOptionsFromConfig(config: INotificationConfig) {
+		let data: SMTPTransport.Options = {
 			host: config.host,
 			port: config.port ?? DEFAULT_SMTP_PORT,
-			secure: config.secure,
 			auth: {
 				user: config.username,
 				pass: config.password,
 			},
-			tls: {
-				ciphers: 'SSLv3',
-			},
 		};
+
+		if (config.secure) {
+			data.tls = { ciphers: 'SSLv3' };
+			data.secure = false;
+		}
+
+		return data;
 	}
 }
 

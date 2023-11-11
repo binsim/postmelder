@@ -47,22 +47,34 @@ app.get('/', (req: Request, res: Response) => {
 		},
 	});
 });
-app.post('/notServiceConf', (req, res) => {
+app.post('/notServiceConf', async (req, res) => {
 	// Add password to body if it can't be changed if username hasn't been changed
-	if (req.body.user === NotificationService.Instance.Config?.username) {
+	if (req.body.username === NotificationService.Instance.Config?.username) {
 		if (!req.body.password) {
 			req.body.password = NotificationService.Instance.Config?.password;
 		}
 	}
+	req.body.port = req.body.port ? Number(req.body.port) : DEFAULT_SMTP_PORT;
+	req.body.ssl = req.body.ssl === 'on';
 
 	// TODO: Validate transporter with new config
+	let isValid = await NotificationService.testConfig(req.body);
+	if (!isValid) {
+		// TODO: Send more information
+		res.status(422).send('Connection to given SMTP Server not possible');
+		return;
+	}
 
-	// TODO: Update Config for NotificationService
+	try {
+		NotificationService.Instance.updateConfig(req.body);
+		res.redirect('/');
+		return;
+	} catch (error) {}
 
 	// TODO: Update Status
 	res.sendStatus(501);
 
-	console.log(req.body);
+	console.log({ body: req.body });
 });
 //#endregion API
 
