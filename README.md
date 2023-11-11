@@ -55,10 +55,8 @@ Um Mails versenden zu können, muss eine `mail.json` Datei im `data`-Ordner in `
 		"host": "smtp.example.com",
 		"port": 587,
 		"secure": true,
-		"auth": {
-			"user": "username",
-			"pass": "password"
-		}
+		"username": "username",
+		"password": "password"
 	}
 }
 ```
