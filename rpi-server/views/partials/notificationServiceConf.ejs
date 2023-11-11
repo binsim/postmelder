@@ -1,0 +1,51 @@
+<div class="notServiceConf">
+	<form action="/notServiceConf" method="post">
+		<div class="grid-container">
+			<div class="grid-item">
+				<label for="server">SMTP Server</label>
+				<input
+					type="text"
+					id="server"
+					name="server"
+					placeholder="smtp.example.com"
+					value="<%= mailConf.host %>"
+				/>
+			</div>
+			<div class="grid-item">
+				<input type="checkbox" name="port-enabled" id="port-enabled" <%=
+				(mailConf.port !== mailConf.DEFAULT_SMTP_PORT) && 'checked' %>/>
+				<label for="port">Port</label>
+				<input
+					type="number"
+					name="port"
+					id="port"
+					value="<%= mailConf.port ?? mailConf.DEFUALT_SMTP_PORT %>"
+				/>
+			</div>
+			<div class="grid-item">
+				<label for="user">User Name</label>
+				<input
+					type="text"
+					id="user"
+					name="user"
+					placeholder="username@example.com"
+					value="<%= mailConf.username %>"
+				/>
+			</div>
+			<div class="grid-item">
+				<input type="checkbox" name="ssl" id="ssl" <%= (mailConf.secure
+				|| !!mailConf.tls?.ciphers) && 'checked' %>>
+				<span>Require SSL</span>
+			</div>
+			<div class="grid-item">
+				<label for="password">Password</label>
+				<input type="password" name="password" id="password" disabled />
+			</div>
+			<div class="grid-item">
+				<input type="checkbox" name="oauth2" id="ssl" />
+				<span>OAuth2</span>
+			</div>
+		</div>
+		<input type="submit" value="Submit" />
+	</form>
+</div>

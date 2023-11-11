@@ -1,0 +1,45 @@
+*,
+*::before,
+*::after {
+	font-size: inherit;
+	box-sizing: border-box;
+}
+
+.notServiceConf {
+	width: max-content;
+	height: max-content;
+}
+
+.notServiceConf .grid-container {
+	display: grid;
+	grid-template-columns: auto auto;
+	column-gap: .4em;
+	row-gap: .5em;
+}
+
+.notServiceConf .grid-container>.grid-item:nth-child(2n -1) {
+	margin-left: auto;
+	margin-right: 0;
+}
+
+.notServiceConf .grid-item label::after {
+	content: ": ";
+}
+
+.notServiceConf input[type="text"],
+.notServiceConf input[type="password"] {
+	width: 25ch;
+}
+
+.notServiceConf input[type="number"]::-webkit-inner-spin-button,
+.notServiceConf input[type="number"]::-webkit-outer-spin-button {
+	appearance: none;
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.notServiceConf input[type="number"] {
+	width: 5ch;
+	appearance: textfield;
+	-moz-appearance: textfield;
+}

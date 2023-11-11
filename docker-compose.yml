@@ -10,6 +10,7 @@ services:
     volumes:
       - ./rpi-server/src:/usr/src/app/src
       - ./rpi-server/views:/usr/src/app/views
+      - ./rpi-server/public:/usr/src/app/public
       - ./rpi-server/nodemon.json:/usr/src/app/nodemon.json
       - ./rpi-server/data:/usr/src/app/data
     container_name: node 
