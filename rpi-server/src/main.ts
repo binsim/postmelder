@@ -106,6 +106,12 @@ app.post('/notServiceConf', async (req, res) => {
 	console.log({ body: req.body });
 });
 app.post('/config-device', (req, res) => {
+	if (req.body.cancle !== undefined) {
+		res.status(200);
+		res.redirect('/');
+		return;
+	}
+
 	const device = mqttService.getDeviceByID(req.body.id);
 	if (device === undefined) {
 		// Unexpected can't add new device from web
