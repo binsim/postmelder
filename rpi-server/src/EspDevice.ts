@@ -82,6 +82,12 @@ export class Device extends EventEmitter implements IDevice {
 		this._isOccupied = value;
 		this.emit('occupiedChanged', this._isOccupied);
 	}
+
+	public toJSON() {
+		return {
+			...this._device,
+		};
+	}
 }
 
 export function loadFromFile(): IDevice[] {
