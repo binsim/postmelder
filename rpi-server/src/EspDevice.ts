@@ -95,7 +95,13 @@ export function loadFromFile(): IDevice[] {
 		const file = readFileSync(CONFIG_FILE);
 		if (file.buffer.byteLength <= 0) return [];
 
-		return JSON.parse(file.toString()) as IDevice[];
+		let devices: IDevice[] = [];
+
+		JSON.parse(file.toString()).forEach((device: JSON_Device) => {
+			devices.push(new Device(device));
+		});
+
+		return devices;
 	} catch (error) {
 		let err = error as Error;
 		if (err.message.includes('no such file or directory, open')) {
