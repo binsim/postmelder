@@ -1,3 +1,4 @@
+import EventEmitter from 'node:events';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const CONFIG_FILE = 'data/esp-clients.json';
@@ -9,26 +10,23 @@ interface JSON_Device {
 	notificationBody: string;
 }
 
-export interface IDevice extends JSON_Device {
+export declare interface IDevice extends JSON_Device {
 	get isOnline(): boolean;
 	get isOccupied(): boolean;
 
-	onOnlineChanged(callback: (status: boolean) => void): void;
-	onOccupiedChanged(callback: (status: boolean) => void): void;
+	on(
+		event: 'onlineChanged' | 'occupiedChanged',
+		callback: (status: boolean) => void
+	): this;
 }
 
-export class Device implements IDevice {
+export class Device extends EventEmitter implements IDevice {
 	private _device: JSON_Device;
 	private _isOnline: boolean = false;
 	private _isOccupied: boolean = false;
 
-	private _onOnlineStatusChangedHandler:
-		| ((status: boolean) => void)
-		| undefined = undefined;
-	private _onOccupiedChangedHandler: ((state: boolean) => void) | undefined =
-		undefined;
-
 	constructor(device: JSON_Device) {
+		super();
 		this._device = device;
 	}
 
@@ -37,39 +35,14 @@ export class Device implements IDevice {
 
 		switch (topic.split('/').at(-1)) {
 			case 'online':
-				const onlineStatus = payload.toString() === 'online';
-
-				if (
-					onlineStatus != this._isOnline &&
-					this._onOnlineStatusChangedHandler
-				) {
-					this._onOnlineStatusChangedHandler(onlineStatus);
-				}
-
-				this._isOnline = onlineStatus;
+				this.isOnline = payload.toString() === 'online';
 				break;
 			case 'status':
-				const isOccupied = payload.toString() !== 'free';
-
-				if (
-					isOccupied !== this._isOccupied &&
-					this._onOccupiedChangedHandler
-				) {
-					this._onOccupiedChangedHandler(isOccupied);
-				}
-
-				this._isOccupied = isOccupied;
+				this.isOccupied = payload.toString() !== 'free';
 				break;
 			default:
 				break;
 		}
-	}
-
-	onOnlineChanged(callback: (status: boolean) => void) {
-		this._onOnlineStatusChangedHandler = callback;
-	}
-	onOccupiedChanged(callback: (status: boolean) => void) {
-		this._onOccupiedChangedHandler = callback;
 	}
 
 	get id() {
@@ -85,7 +58,7 @@ export class Device implements IDevice {
 		return this._device.notificationBody;
 	}
 	set notificationBody(value) {
-		this._device.notificationBody;
+		this._device.notificationBody = value;
 	}
 	get notificationTitle() {
 		return this._device.notificationTitle;
@@ -96,8 +69,18 @@ export class Device implements IDevice {
 	get isOnline() {
 		return this._isOnline;
 	}
+	private set isOnline(value) {
+		if (value === this._isOnline) return;
+		this._isOnline = value;
+		this.emit('onlineChanged', this._isOnline);
+	}
 	get isOccupied() {
 		return this._isOccupied;
+	}
+	private set isOccupied(value) {
+		if (value === this._isOccupied) return;
+		this._isOccupied = value;
+		this.emit('occupiedChanged', this._isOccupied);
 	}
 }
 

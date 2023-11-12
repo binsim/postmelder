@@ -24,7 +24,7 @@ mqttService.on('connectionChanged', (value) =>
 	stateService.mqttOnlineStateChanged(value)
 );
 mqttService.on('deviceAdded', (device) => {
-	device.onOccupiedChanged((status) => {
+	device.on('occupiedChanged', (status) => {
 		if (status) {
 			NotificationService.Instance.sendMessage(
 				device.subscriber,
