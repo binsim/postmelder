@@ -43,3 +43,46 @@
 	appearance: textfield;
 	-moz-appearance: textfield;
 }
+
+.configure-esp-device,
+.configure-esp-device form {
+	width: max-content;
+	height: max-content;
+}
+
+.configure-esp-device h1 {
+	text-align: center;
+}
+
+.configure-esp-device .grid-container {
+	display: grid;
+	grid-template-columns: max-content auto;
+	gap: .5em;
+}
+
+.configure-esp-device .grid-container label {
+	grid-column: 1;
+	margin-left: auto;
+	margin-right: 0;
+}
+
+.configure-esp-device .grid-container label::after {
+	content: ': ';
+}
+
+.configure-esp-device .grid-container input[type="number"]::-webkit-inner-spin-button,
+.configure-esp-device .grid-container input[type="number"]::-webkit-outer-spin-button {
+	appearance: none;
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.configure-esp-device .grid-container input[type="number"] {
+	appearance: textfield;
+	-moz-appearance: textfield;
+}
+
+.configure-esp-device textarea {
+	width: 100%;
+	margin-top: .5em;
+}

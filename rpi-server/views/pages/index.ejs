@@ -10,6 +10,7 @@
 
 <main>
     <%- //include('../partials/notificationServiceConf') -%>
+    <%- include('../partials/configureDeviceDialog')%>
     <table class="configured-devices">
     <caption>Konfigurierte Postfächer</caption>
     <tr>
@@ -18,7 +19,7 @@
         <th>Benachrichtigungsziel</th>
     </tr>
 <% devices.configured.forEach(device => { %>
-    <tr>
+    <tr onclick="configureDevice(<%= JSON.stringify(device)%>)">
     <td><%= device.id %></td>
     <td><%= device.boxnumber %></td>
     <td><%= device.to.join('; ') %></td>
@@ -34,7 +35,7 @@
    <th>Benachrichtigungsziel</th>
    </tr>
    <% devices.toConfigure.forEach(device => { %>
-   <tr>
+   <tr onclick="configureDevice(<%= JSON.stringify(device) %>)">
    <td><%= device.id %> <input type="hidden" name="id" value="<%=device.id%>"></td>
    <td><%= device.boxnumber %></td>
    <td><%= device.to?.join('; ') %><td>
