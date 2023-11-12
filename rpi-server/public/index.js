@@ -15,7 +15,6 @@ notification_username_element.addEventListener('change', () => {
 
 notification_port_input.disabled = !notification_port_checkbox.checked;
 notification_port_checkbox.addEventListener('change', () => {
-	console.log(notification_port_checkbox.checked);
 	notification_port_input.disabled = !notification_port_checkbox.checked;
 
 	if (!notification_port_checkbox.checked) {
