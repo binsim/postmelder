@@ -75,14 +75,8 @@ Passwort: postmelder
 
 [Online Anleitung](https://raspberrytips.com/access-point-setup-raspberry-pi/)
 
-1. Schritt Update:
 
-```bash
- sudo apt update
- sudo apt upgrade -y
-```
-
-2. Schritt WLAN aktivieren:
+1. Schritt WLAN aktivieren:
 
 ```bash
   sudo raspi-config
@@ -90,20 +84,20 @@ Passwort: postmelder
 
 WLAN country Germany eingestellt
 
-3. Enable Wifi Interface im Networkmanager:
+2. Enable Wifi Interface im Networkmanager:
 
 ```bash
 sudo nmcli con add con-name hotspot ifname wlan0 type wifi ssid "Postmelder-Wifi"
 ```
 
-4. Set Access Point Security und Password:
+3. Set Access Point Security und Password:
 
 ```bash
 sudo nmcli con modify hotspot wifi-sec.key-mgmt wpa-psk
 sudo nmcli con modify hotspot wifi-sec.psk "postmelder"
 ```
 
-5. Configure to Run as Access Point
+4. Configure to Run as Access Point
 
 ```bash
 sudo nmcli con modify hotspot 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared
