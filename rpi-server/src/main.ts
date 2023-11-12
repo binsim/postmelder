@@ -105,6 +105,31 @@ app.post('/notServiceConf', async (req, res) => {
 
 	console.log({ body: req.body });
 });
+app.post('/config-device', (req, res) => {
+	const device = mqttService.getDeviceByID(req.body.id);
+	if (device === undefined) {
+		// Unexpected can't add new device from web
+		res.sendStatus(500);
+		return;
+	}
+
+	req.body.boxnumber = Number(req.body.boxnumber);
+	if (isNaN(req.body.boxnumber)) {
+		res.status(400).json({ ...req.body, error: 'boxNumber not a number' });
+		return;
+	}
+
+	// Updating the device info
+	device.boxNumber = req.body.boxnumber;
+	device.notificationBody = req.body.body;
+	device.notificationTitle = req.body.subject;
+	device.subscriber = req.body.to.split('; ');
+
+	mqttService.updateDevice(device);
+
+	res.status(200);
+	res.redirect('/');
+});
 //#endregion API
 
 app.listen(PORT, () => {
