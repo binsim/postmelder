@@ -9,9 +9,39 @@
 </header>
 
 <main>
-    <%- include('../partials/notificationServiceConf') -%>
-</main>
+    <%- //include('../partials/notificationServiceConf') -%>
+    <table class="configured-devices">
+    <caption>Konfigurierte Postfächer</caption>
+    <tr>
+        <th>ESP-Client ID</th>
+        <th>Fachnummer</th>
+        <th>Benachrichtigungsziel</th>
+    </tr>
+<% devices.configured.forEach(device => { %>
+    <tr>
+    <td><%= device.id %></td>
+    <td><%= device.boxnumber %></td>
+    <td><%= device.to.join('; ') %></td>
+    </tr>
+<% }) %>
+    </table>
 
+    <table class="found-devices">
+   <caption>Weitere gefundene Geräte</caption> 
+   <tr>
+   <th>ESP-Client ID</th>
+   <th>Fachnummer</th>
+   <th>Benachrichtigungsziel</th>
+   </tr>
+   <% devices.toConfigure.forEach(device => { %>
+   <tr>
+   <td><%= device.id %> <input type="hidden" name="id" value="<%=device.id%>"></td>
+   <td><%= device.boxnumber %></td>
+   <td><%= device.to?.join('; ') %><td>
+   </tr>
+   <% })%>
+    </table>
+</main>
 <footer>
     <%- //include('../partials/footer'); %>
 </footer>

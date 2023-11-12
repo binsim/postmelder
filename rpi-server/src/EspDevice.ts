@@ -5,14 +5,16 @@ const CONFIG_FILE = 'data/esp-clients.json';
 
 interface JSON_Device {
 	id: string;
-	subscriber: string[];
-	notificationTitle: string;
-	notificationBody: string;
+	subscriber?: string[];
+	notificationTitle?: string;
+	notificationBody?: string;
+	boxNumber?: number;
 }
 
 export declare interface IDevice extends JSON_Device {
 	get isOnline(): boolean;
 	get isOccupied(): boolean;
+	get isCompletelyConfiguerd(): boolean;
 
 	on(
 		event: 'onlineChanged' | 'occupiedChanged',
@@ -64,7 +66,13 @@ export class Device extends EventEmitter implements IDevice {
 		return this._device.notificationTitle;
 	}
 	set notificationTitle(value) {
-		this._device.notificationTitle;
+		this._device.notificationTitle = value;
+	}
+	get boxNumber() {
+		return this._device.boxNumber;
+	}
+	set boxNumber(value) {
+		this._device.boxNumber = value;
 	}
 	get isOnline() {
 		return this._isOnline;
@@ -81,6 +89,12 @@ export class Device extends EventEmitter implements IDevice {
 		if (value === this._isOccupied) return;
 		this._isOccupied = value;
 		this.emit('occupiedChanged', this._isOccupied);
+	}
+	get isCompletelyConfiguerd() {
+		return (
+			!!this._device.boxNumber &&
+			Number(this._device.subscriber?.length) > 0
+		);
 	}
 
 	public toJSON() {

@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import { IMQTTService, MQTTService } from './mqttService';
 import { StateService, IStateService } from './status';
 import { DEFAULT_SMTP_PORT, NotificationService } from './notification';
+import { IDevice } from './EspDevice';
 
 //#region Setup
 // Importend for using .env variables
@@ -25,6 +26,14 @@ mqttService.on('connectionChanged', (value) =>
 );
 mqttService.on('deviceAdded', (device) => {
 	device.on('occupiedChanged', (status) => {
+		// TODO: Notify User for this error
+		if (
+			device.subscriber === undefined ||
+			device.notificationBody === undefined ||
+			device.notificationTitle === undefined
+		)
+			return;
+
 		if (status) {
 			NotificationService.Instance.sendMessage(
 				device.subscriber,
@@ -40,7 +49,27 @@ mqttService.connect();
 
 //#region API
 app.get('/', (req: Request, res: Response) => {
+	let devices;
+	{
+		const configured: IDevice[] = [];
+		const toConfigure: IDevice[] = [];
+
+		mqttService.devices.forEach((device) => {
+			if (device.isCompletelyConfiguerd) {
+				configured.push(device);
+			} else {
+				toConfigure.push(device);
+			}
+		});
+
+		devices = {
+			configured,
+			toConfigure,
+		};
+	}
+
 	res.render('pages/index', {
+		devices,
 		mailConf: {
 			...NotificationService.Instance.Config,
 			DEFAULT_SMTP_PORT,
