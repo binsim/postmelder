@@ -119,17 +119,27 @@ app.post('/config-device', (req, res) => {
 		return;
 	}
 
-	req.body.boxnumber = Number(req.body.boxnumber);
-	if (isNaN(req.body.boxnumber)) {
-		res.status(400).json({ ...req.body, error: 'boxNumber not a number' });
-		return;
-	}
+	if (req.body.delete !== undefined) {
+		device.boxNumber = undefined;
+		device.notificationBody = undefined;
+		device.notificationTitle = undefined;
+		device.subscriber = undefined;
+	} else {
+		req.body.boxnumber = Number(req.body.boxnumber);
+		if (isNaN(req.body.boxnumber)) {
+			res.status(400).json({
+				...req.body,
+				error: 'boxNumber not a number',
+			});
+			return;
+		}
 
-	// Updating the device info
-	device.boxNumber = req.body.boxnumber;
-	device.notificationBody = req.body.body;
-	device.notificationTitle = req.body.subject;
-	device.subscriber = req.body.to.split('; ');
+		// Updating the device info
+		device.boxNumber = req.body.boxnumber;
+		device.notificationBody = req.body.body;
+		device.notificationTitle = req.body.subject;
+		device.subscriber = req.body.to.split('; ');
+	}
 
 	mqttService.updateDevice(device);
 

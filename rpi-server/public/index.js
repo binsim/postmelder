@@ -37,8 +37,8 @@ function configureDevice(device) {
 	id.value = device.id;
 	boxNumber.value = device.boxNumber;
 	to.value = device.subscriber?.join('; ') ?? '';
-	subject.value = device.notificationTitle;
-	body.value = device.notificationBody;
+	subject.value = device.notificationTitle ?? '';
+	body.value = device.notificationBody ?? '';
 
 	// Showing the dialog
 	configure_esp_device_dialog.showModal();
