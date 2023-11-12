@@ -62,3 +62,49 @@ Um Mails versenden zu können, muss eine `mail.json` Datei im `data`-Ordner in `
 	}
 }
 ```
+
+## RP als Accesspoint
+
+### Allgemeine Konfiguration Raspberry:
+
+Hostname: postmelder
+
+Benutzername: administrator
+
+Passwort: postmelder
+
+[Online Anleitung](https://raspberrytips.com/access-point-setup-raspberry-pi/)
+
+
+1. Schritt WLAN aktivieren:
+
+```bash
+  sudo raspi-config
+```
+
+WLAN country Germany eingestellt
+
+2. Enable Wifi Interface im Networkmanager:
+
+```bash
+sudo nmcli con add con-name hotspot ifname wlan0 type wifi ssid "Postmelder-Wifi"
+```
+
+3. Set Access Point Security und Password:
+
+```bash
+sudo nmcli con modify hotspot wifi-sec.key-mgmt wpa-psk
+sudo nmcli con modify hotspot wifi-sec.psk "postmelder"
+```
+
+4. Configure to Run as Access Point
+
+```bash
+sudo nmcli con modify hotspot 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared
+```
+
+Einstellung können mit folgenden Befehl getätigt werden:
+
+```bash
+sudo nmtui
+```
