@@ -36,7 +36,7 @@ function configureDevice(device) {
 	// Setting to already existing values
 	id.value = device.id;
 	boxNumber.value = device.boxNumber;
-	to.value = device.to?.join('; ') ?? '';
+	to.value = device.subscriber?.join('; ') ?? '';
 	subject.value = device.notificationTitle;
 	body.value = device.notificationBody;
 
