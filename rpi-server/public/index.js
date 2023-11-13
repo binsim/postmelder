@@ -1,16 +1,25 @@
-let notification_username_element = document.querySelector(
+const notification_username_element = document.querySelector(
 	'.notServiceConf #username'
 );
-let notification_password_element = document.querySelector(
+const notification_password_element = document.querySelector(
 	'.notServiceConf #password'
 );
-let notification_port_checkbox = document.querySelector(
+const notification_port_checkbox = document.querySelector(
 	'.notServiceConf #port-enabled'
 );
-let notification_port_input = document.querySelector('.notServiceConf #port');
-let configure_esp_device_dialog = document.querySelector(
+const notification_port_input = document.querySelector('.notServiceConf #port');
+const configure_esp_device_dialog = document.querySelector(
 	'dialog.configure-esp-device'
 );
+const testmessage_response_dialog = document.querySelector(
+	'dialog.testmessage-response'
+);
+const testmessage_response_dialog_close_btn =
+	testmessage_response_dialog.querySelector('button#close');
+
+testmessage_response_dialog_close_btn.addEventListener('click', (e) => {
+	testmessage_response_dialog.close();
+});
 
 notification_username_element.addEventListener('change', () => {
 	notification_password_element.disabled = false;
@@ -49,10 +58,32 @@ function configureDevice(device) {
 
 async function testMessage(e, deviceId) {
 	e.stopPropagation();
+	testmessage_response_dialog.showModal();
 
-	// TODO: Show user something is done in the background
+	const accepted_destinations_ul = testmessage_response_dialog.querySelector(
+		'.accepted-destinations ul'
+	);
+	const rejected_destinations_ul = testmessage_response_dialog.querySelector(
+		'.rejected-destinations ul'
+	);
+	const loader = testmessage_response_dialog.querySelector('.loader-wrapper');
 
 	const response = await (await fetch('/testMessage?id=' + deviceId)).json();
 
-	console.log(response);
+	loader.style.display = 'none';
+
+	if (response.accepted) {
+		response.accepted.forEach((e) => {
+			const i = document.createElement('li');
+			i.innerText = e;
+			accepted_destinations_ul.appendChild(i);
+		});
+	}
+	if (response.rejected) {
+		response.rejected.forEach((e) => {
+			const i = document.createElement('li');
+			i.innerText = e;
+			rejected_destinations_ul.appendChild(i);
+		});
+	}
 }
