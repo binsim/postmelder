@@ -82,6 +82,11 @@ app.get('/testMessage', async (req, res) => {
 	res.status(200).json(response);
 });
 app.post('/notServiceConf', async (req, res) => {
+	if (req.body.cancle !== undefined) {
+		res.redirect('/');
+		return;
+	}
+
 	// Add password to body if it can't be changed if username hasn't been changed
 	if (req.body.username === NotificationService.Instance.Config?.username) {
 		if (!req.body.password) {

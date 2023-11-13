@@ -1,13 +1,14 @@
-const notification_username_element = document.querySelector(
-	'.notServiceConf #username'
+const notification_conf_dialog = document.querySelector(
+	'dialog.notServiceConf'
 );
-const notification_password_element = document.querySelector(
-	'.notServiceConf #password'
-);
-const notification_port_checkbox = document.querySelector(
-	'.notServiceConf #port-enabled'
-);
-const notification_port_input = document.querySelector('.notServiceConf #port');
+const notification_username_element =
+	notification_conf_dialog.querySelector('#username');
+const notification_password_element =
+	notification_conf_dialog.querySelector('#password');
+const notification_port_checkbox =
+	notification_conf_dialog.querySelector('#port-enabled');
+const notification_port_input = notification_conf_dialog.querySelector('#port');
+
 const configure_esp_device_dialog = document.querySelector(
 	'dialog.configure-esp-device'
 );
@@ -86,4 +87,8 @@ async function testMessage(e, deviceId) {
 			rejected_destinations_ul.appendChild(i);
 		});
 	}
+}
+
+function showNotificationServiceConfDialog() {
+	notification_conf_dialog.showModal();
 }

@@ -6,10 +6,11 @@
 
 <header>
     <%- // include('../partials/header'); %>
+    <button onclick="showNotificationServiceConfDialog()">SMTP Einstellungen</button>
 </header>
 
 <main>
-    <%- //include('../partials/notificationServiceConf') -%>
+    <%- include('../partials/notificationServiceConfDialog') -%>
     <%- include('../partials/testMessageResponseDialog')%>
     <%- include('../partials/configureDeviceDialog')%>
     <table class="configured-devices">
