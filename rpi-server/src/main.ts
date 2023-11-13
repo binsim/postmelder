@@ -65,6 +65,22 @@ app.get('/', (req: Request, res: Response) => {
 		},
 	});
 });
+app.get('/testMessage', async (req, res) => {
+	console.log({ query: req.query });
+	if (typeof req.query.id !== 'string') {
+		res.status(400).send('ID is not a string');
+		return;
+	}
+	const device = mqttService.getDeviceByID(req.query.id);
+	if (device === undefined) {
+		res.status(400).send('Entered id not found');
+		return;
+	}
+
+	const response = await NotificationService.Instance.sendTestMessage(device);
+	console.log(response);
+	res.status(200).json(response);
+});
 app.post('/notServiceConf', async (req, res) => {
 	// Add password to body if it can't be changed if username hasn't been changed
 	if (req.body.username === NotificationService.Instance.Config?.username) {

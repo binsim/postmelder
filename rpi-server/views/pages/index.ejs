@@ -25,6 +25,7 @@
     <td><%= device.boxNumber %></td>
     <td><%= device.checkInterval %></td>
     <td><%= device.subscriber?.join('; ') %></td>
+    <td><button onclick="testMessage(event, '<%= device.id %>')">Testnachricht</td>
     </tr>
 <% }) %>
     </table>

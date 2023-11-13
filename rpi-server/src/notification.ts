@@ -145,7 +145,13 @@ export class NotificationService {
 		});
 	}
 
-	private sendMessage(device: IDevice): Promise<MailReturn> {
+	async sendTestMessage(device: IDevice) {
+		return await this.sendMessage(device, true);
+	}
+	private sendMessage(
+		device: IDevice,
+		isTestMessage = false
+	): Promise<MailReturn> {
 		return new Promise(async (resolve, reject) => {
 			if (device.subscriber!.length <= 0) {
 				reject(new Error('No target for message proviede'));
@@ -168,7 +174,9 @@ export class NotificationService {
 				const info: MailReturn = await this.transporter!.sendMail({
 					from: this.conf.username,
 					to: device.subscriber!.join(', '),
-					subject: device.notificationTitle,
+					subject: isTestMessage
+						? `Test: ${device.notificationTitle}`
+						: device.notificationTitle,
 					text: device.notificationBody,
 				});
 				resolve(info);
@@ -177,7 +185,7 @@ export class NotificationService {
 				reject(err);
 				return;
 			}
-			device.messageAlreadySent = true;
+			if (!isTestMessage) device.messageAlreadySent = true;
 		});
 	}
 	updateConfig(config: INotificationConfig, writeToFile = true) {

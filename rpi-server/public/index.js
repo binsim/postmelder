@@ -46,3 +46,13 @@ function configureDevice(device) {
 	// Showing the dialog
 	configure_esp_device_dialog.showModal();
 }
+
+async function testMessage(e, deviceId) {
+	e.stopPropagation();
+
+	// TODO: Show user something is done in the background
+
+	const response = await (await fetch('/testMessage?id=' + deviceId)).json();
+
+	console.log(response);
+}
