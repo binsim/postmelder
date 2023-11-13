@@ -1,6 +1,8 @@
 import { Transporter, createTransport } from 'nodemailer';
 import { readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { scheduleJob } from 'node-schedule';
+import { CheckInterval, IDevice } from './EspDevice';
 
 export const DEFAULT_SMTP_PORT = 587;
 const CONFIG_FILE = 'data/mail.json';
@@ -16,6 +18,9 @@ export class NotificationService {
 	private static _instance: NotificationService;
 	private transporter: Transporter | undefined;
 	private conf: INotificationConfig | undefined;
+	private _hourlyDevices: IDevice[] = [];
+	private _dailyDevices: IDevice[] = [];
+	private _weeklyDevices: IDevice[] = [];
 
 	private constructor() {
 		// TODO: Read config from file and save it to the transporter
@@ -40,6 +45,16 @@ export class NotificationService {
 			console.error(error);
 			return;
 		}
+
+		scheduleJob('0 * * * *', () =>
+			this.checkForSendingMessage(this._hourlyDevices)
+		);
+		scheduleJob('0 0 * * *', () =>
+			this.checkForSendingMessage(this._dailyDevices)
+		);
+		scheduleJob('0 0 * * 1', () =>
+			this.checkForSendingMessage(this._weeklyDevices)
+		);
 	}
 
 	static get Instance() {
@@ -75,13 +90,64 @@ export class NotificationService {
 		});
 	}
 
-	sendMessage(
-		to: string[],
-		subject: string,
-		message: string
-	): Promise<MailReturn> {
+	addDevice(device: IDevice) {
+		const changeHandler = (status: boolean) => {
+			if (status && !device.messageAlreadySent) {
+				this.sendMessage(device);
+			}
+		};
+		const addDeviceToArr = (interval: CheckInterval | undefined) => {
+			let arr = [];
+			switch (interval) {
+				case 'immediately':
+					if (device.isOccupied && !device.messageAlreadySent)
+						this.sendMessage(device);
+
+					device.on('onlineChanged', changeHandler);
+					break;
+
+				case 'daily':
+					arr = this._dailyDevices;
+					break;
+				case 'hourly':
+					arr = this._hourlyDevices;
+					break;
+				case 'weekly':
+					arr = this._weeklyDevices;
+					break;
+			}
+
+			arr.push(device);
+		};
+		addDeviceToArr(device.checkInterval!);
+
+		device.on('checkIntervalChanged', (oldVal, newVal) => {
+			let arr: IDevice[] = [];
+			switch (oldVal) {
+				case 'immediately':
+					device.off('onlineChanged', changeHandler);
+					break;
+				case 'daily':
+					arr = this._dailyDevices;
+					break;
+				case 'hourly':
+					arr = this._hourlyDevices;
+					break;
+				case 'weekly':
+					arr = this._weeklyDevices;
+					break;
+			}
+
+			let i = arr.indexOf(device);
+			if (i >= 0) arr.slice(i, 1);
+
+			addDeviceToArr(newVal);
+		});
+	}
+
+	private sendMessage(device: IDevice): Promise<MailReturn> {
 		return new Promise(async (resolve, reject) => {
-			if (to.length <= 0) {
+			if (device.subscriber!.length <= 0) {
 				reject(new Error('No target for message proviede'));
 				return;
 			}
@@ -101,9 +167,9 @@ export class NotificationService {
 			try {
 				const info: MailReturn = await this.transporter!.sendMail({
 					from: this.conf.username,
-					to: to.join(', '),
-					subject,
-					text: message,
+					to: device.subscriber!.join(', '),
+					subject: device.notificationTitle,
+					text: device.notificationBody,
 				});
 				resolve(info);
 			} catch (err) {
@@ -111,6 +177,7 @@ export class NotificationService {
 				reject(err);
 				return;
 			}
+			device.messageAlreadySent = true;
 		});
 	}
 	updateConfig(config: INotificationConfig, writeToFile = true) {
@@ -120,6 +187,14 @@ export class NotificationService {
 		this.conf = config;
 		if (writeToFile)
 			writeFileSync(CONFIG_FILE, JSON.stringify({ transporter: config }));
+	}
+
+	private checkForSendingMessage(devices: IDevice[]) {
+		devices.forEach((device) => {
+			if (device.isOccupied && !device.messageAlreadySent) {
+				this.sendMessage(device);
+			}
+		});
 	}
 
 	private static getOptionsFromConfig(config: INotificationConfig) {

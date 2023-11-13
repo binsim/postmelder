@@ -16,12 +16,14 @@
     <tr>
         <th>ESP-Client ID</th>
         <th>Fachnummer</th>
+        <th>Intervall</th>
         <th>Benachrichtigungsziel</th>
     </tr>
 <% devices.configured.forEach(device => { %>
     <tr onclick="configureDevice(<%= JSON.stringify(device)%>)">
     <td><%= device.id %></td>
     <td><%= device.boxNumber %></td>
+    <td><%= device.checkInterval %></td>
     <td><%= device.subscriber?.join('; ') %></td>
     </tr>
 <% }) %>
@@ -32,12 +34,14 @@
    <tr>
    <th>ESP-Client ID</th>
    <th>Fachnummer</th>
+   <th>Intervall</th>
    <th>Benachrichtigungsziel</th>
    </tr>
    <% devices.toConfigure.forEach(device => { %>
    <tr onclick="configureDevice(<%= JSON.stringify(device) %>)">
    <td><%= device.id %> <input type="hidden" name="id" value="<%=device.id%>"></td>
    <td><%= device.boxnumber %></td>
+   <td><%= device.checkInterval %></td>
    <td><%= device.subscriber?.join('; ') %><td>
    </tr>
    <% })%>

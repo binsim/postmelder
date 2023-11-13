@@ -1,6 +1,6 @@
 <div class="notServiceConf">
 	<script>
-		var DEFAULT_SMTP_PORT = <%= mailConf.DEFAULT_SMTP_PORT %>
+		var DEFAULT_SMTP_PORT = <%= constants.DEFAULT_SMTP_PORT %>
 	</script>
 	<form action="/notServiceConf" method="post">
 		<div class="grid-container">
@@ -16,13 +16,13 @@
 			</div>
 			<div class="grid-item">
 				<input type="checkbox" name="port-enabled" id="port-enabled" <%=
-				(mailConf.port !== mailConf.DEFAULT_SMTP_PORT) && 'checked' %>/>
+				(mailConf.port !== constants.DEFAULT_SMTP_PORT) && 'checked' %>/>
 				<label for="port">Port</label>
 				<input
 					type="number"
 					name="port"
 					id="port"
-					value="<%= mailConf.port ?? mailConf.DEFUALT_SMTP_PORT %>"
+					value="<%= mailConf.port ?? constants.DEFUALT_SMTP_PORT %>"
 					min="0"
 				/>
 			</div>

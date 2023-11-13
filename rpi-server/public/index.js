@@ -29,6 +29,8 @@ function configureDevice(device) {
 	// Getting all elements
 	const id = configure_esp_device_dialog.querySelector('#id');
 	const boxNumber = configure_esp_device_dialog.querySelector('#boxnumber');
+	const checkInterval =
+		configure_esp_device_dialog.querySelector('#checkinterval');
 	const to = configure_esp_device_dialog.querySelector('#to');
 	const subject = configure_esp_device_dialog.querySelector('#subject');
 	const body = configure_esp_device_dialog.querySelector('#body');
@@ -36,6 +38,7 @@ function configureDevice(device) {
 	// Setting to already existing values
 	id.value = device.id;
 	boxNumber.value = device.boxNumber;
+	checkInterval.value = device.checkInterval;
 	to.value = device.subscriber?.join('; ') ?? '';
 	subject.value = device.notificationTitle ?? '';
 	body.value = device.notificationBody ?? '';

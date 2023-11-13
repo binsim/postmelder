@@ -3,7 +3,7 @@ import { config } from 'dotenv';
 import { IMQTTService, MQTTService } from './mqttService';
 import { StateService, IStateService } from './status';
 import { DEFAULT_SMTP_PORT, NotificationService } from './notification';
-import { IDevice } from './EspDevice';
+import { CheckInterals, IDevice } from './EspDevice';
 
 //#region Setup
 // Importend for using .env variables
@@ -18,6 +18,8 @@ app.use(express.urlencoded({ extended: true })); // to support URL-encoded bodie
 // set the view engine to ejs
 app.set('view engine', 'ejs');
 
+// Run ctor
+NotificationService.Instance;
 const stateService: IStateService = new StateService();
 
 const mqttService: IMQTTService = new MQTTService();
@@ -25,23 +27,7 @@ mqttService.on('connectionChanged', (value) =>
 	stateService.mqttOnlineStateChanged(value)
 );
 mqttService.on('deviceAdded', (device) => {
-	device.on('occupiedChanged', (status) => {
-		// TODO: Notify User for this error
-		if (
-			device.subscriber === undefined ||
-			device.notificationBody === undefined ||
-			device.notificationTitle === undefined
-		)
-			return;
-
-		if (status) {
-			NotificationService.Instance.sendMessage(
-				device.subscriber,
-				device.notificationTitle,
-				device.notificationBody
-			);
-		}
-	});
+	NotificationService.Instance.addDevice(device);
 	stateService.addDeviceListener(device);
 });
 mqttService.connect();
@@ -70,9 +56,12 @@ app.get('/', (req: Request, res: Response) => {
 
 	res.render('pages/index', {
 		devices,
+		constants: {
+			checkinterval: CheckInterals,
+			DEFAULT_SMTP_PORT,
+		},
 		mailConf: {
 			...NotificationService.Instance.Config,
-			DEFAULT_SMTP_PORT,
 		},
 	});
 });
@@ -124,6 +113,7 @@ app.post('/config-device', (req, res) => {
 		device.notificationBody = undefined;
 		device.notificationTitle = undefined;
 		device.subscriber = undefined;
+		device.checkInterval = undefined;
 	} else {
 		req.body.boxnumber = Number(req.body.boxnumber);
 		if (isNaN(req.body.boxnumber)) {
@@ -139,6 +129,7 @@ app.post('/config-device', (req, res) => {
 		device.notificationBody = req.body.body;
 		device.notificationTitle = req.body.subject;
 		device.subscriber = req.body.to.split('; ');
+		device.checkInterval = req.body.checkinterval;
 	}
 
 	mqttService.updateDevice(device);

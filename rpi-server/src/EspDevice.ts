@@ -2,6 +2,13 @@ import EventEmitter from 'node:events';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const CONFIG_FILE = 'data/esp-clients.json';
+export const CheckInterals = [
+	'immediately',
+	'hourly',
+	'daily',
+	'weekly',
+] as const;
+export type CheckInterval = (typeof CheckInterals)[number];
 
 interface JSON_Device {
 	id: string;
@@ -9,16 +16,36 @@ interface JSON_Device {
 	notificationTitle?: string;
 	notificationBody?: string;
 	boxNumber?: number;
+	checkInterval?: CheckInterval;
 }
 
 export declare interface IDevice extends JSON_Device {
 	get isOnline(): boolean;
 	get isOccupied(): boolean;
 	get isCompletelyConfiguerd(): boolean;
+	messageAlreadySent: boolean;
 
 	on(
 		event: 'onlineChanged' | 'occupiedChanged',
 		callback: (status: boolean) => void
+	): this;
+	on(
+		event: 'checkIntervalChanged',
+		callback: (
+			oldVal: CheckInterval | undefined,
+			newVal: CheckInterval | undefined
+		) => void
+	): this;
+	off(
+		event: 'onlineChanged' | 'occupiedChanged',
+		callback: (status: boolean) => void
+	): this;
+	off(
+		event: 'checkIntervalChanged',
+		callback: (
+			oldVal: CheckInterval | undefined,
+			newVal: CheckInterval | undefined
+		) => void
 	): this;
 }
 
@@ -26,6 +53,7 @@ export class Device extends EventEmitter implements IDevice {
 	private _device: JSON_Device;
 	private _isOnline: boolean = false;
 	private _isOccupied: boolean = false;
+	messageAlreadySent: boolean = false;
 
 	constructor(device: JSON_Device) {
 		super();
@@ -76,6 +104,14 @@ export class Device extends EventEmitter implements IDevice {
 	}
 	get isOnline() {
 		return this._isOnline;
+	}
+	get checkInterval() {
+		return this._device.checkInterval;
+	}
+	set checkInterval(value) {
+		if (value === this._device.checkInterval) return;
+		this.emit('checkIntervalChanged', this._device.checkInterval, value);
+		this._device.checkInterval = value;
 	}
 	private set isOnline(value) {
 		if (value === this._isOnline) return;
