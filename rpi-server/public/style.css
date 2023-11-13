@@ -44,6 +44,16 @@
 	-moz-appearance: textfield;
 }
 
+.configured-devices,
+.found-devices {
+	width: 100%;
+	text-align: center;
+}
+
+.configured-devices {
+	margin-bottom: 3em;
+}
+
 .configure-esp-device,
 .configure-esp-device form {
 	width: max-content;
