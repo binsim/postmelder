@@ -1,36 +1,49 @@
-#define RLedPin 2
-#define GLedPin 3
-#define BLedPin 4
+//Pins
+//RGB-LED
+#define RLEDPIN 2
+#define GLEDPIN 3
+#define BLEDPIN 4
 
+
+//Werte
+//Prozentsatz vom kalibrierten Sensormesswert, bei dem das System auslöst
+#define THRESHOLDRATIO 0.95
+
+//Zeit zwischen zwei Überprüfungen, ob das Postfach wieder frei ist in Sekunden
+#define CHECKTIME 20
+
+//Bibliotheken
 #include <Arduino.h>
 #include <HCSR04.h>
 
+//Funktionen
 void calibrateEcho();
 void measureMean(int cycles);
 bool belegt();
 bool geleert();
 
+//Variablen
 // Abstandssensor
 double *distances;
-byte triggerPin = 13;
-byte echoCount = 2;
-byte *echoPins = new byte[echoCount]{12, 11};
+const byte triggerPin = 13;
+const byte echoCount = 2;
+const byte *echoPins = new byte[echoCount]{12, 11};
 
 float threshhold1; //-> Flash
 float threshhold2; //-> Flash
 
-float meanDistances[2];
+float meanDistances[echoCount];
 
 bool ausgeloest = false;
 
 void setup()
 {
-	pinMode(RLedPin, OUTPUT); // Pins initialisieren
-	pinMode(GLedPin, OUTPUT);
-	pinMode(BLedPin, OUTPUT);
+	pinMode(RLEDPIN, OUTPUT); // Pins initialisieren
+	pinMode(GLEDPIN, OUTPUT);
+	pinMode(BLEDPIN, OUTPUT);
 
 	ledcSetup(0, 10, 12); // PWM für blaue LED
-	ledcAttachPin(BLedPin, 0);
+	ledcAttachPin(BLEDPIN, 0);
 
 	ledcWrite(0, 100);	  // blaue LED blinken
 	Serial.begin(115200); // Serielle USB-Verbindung für Debugging
@@ -51,8 +64,8 @@ void calibrateEcho()
 
 	measureMean(5); // Mittelwert aus 5 Messungen
 
-	threshhold1 = meanDistances[0] * threshholdRatio; // mit threshholdRation multiplizieren
-	threshhold2 = meanDistances[1] * threshholdRatio;
+	threshhold1 = meanDistances[0] * THRESHOLDRATIO; // mit threshholdRatio multiplizieren
+	threshhold2 = meanDistances[1] * THRESHOLDRATIO;
 
 	Serial.print("Thresholds: ");
 	Serial.print(threshhold1);
@@ -98,9 +111,6 @@ void measureMean(int cycles)
 
 	meanDistances[0] = mean1;
 	meanDistances[1] = mean2;
-
-	mean1 = 0;
-	mean2 = 0;
 
 	Serial.print("Mittelwerte: ");
 	Serial.print(meanDistances[0]);
@@ -157,7 +167,7 @@ bool geleert()
 		cycle++;
 	}
 
-	if (millis() >= (zeit + cycle * 20000))
+	if (millis() >= (zeit + cycle * (CHECKTIME * 1000)))
 	{ // ca. alle 20s
 		Serial.println("MESSEN");
 
@@ -196,13 +206,13 @@ void loop()
 		if (belegt())
 		{
 			ausgeloest = true;
-			digitalWrite(GLedPin, HIGH);
+			digitalWrite(GLEDPIN, HIGH);
 		}
 	}
 	else if (geleert())
 	{ // wenn wieder geleert, dann grüne LED aus und publishen
 
 		ausgeloest = false;
-		digitalWrite(GLedPin, LOW);
+		digitalWrite(GLEDPIN, LOW);
 	}
 }
