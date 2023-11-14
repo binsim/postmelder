@@ -33,7 +33,7 @@ describe('MQTTService', () => {
 
 		let isOnline = false;
 
-		device?.onOnlineChanged((value) => (isOnline = value));
+		device?.on('onlineChanged', (value) => (isOnline = value));
 		(service as any).onMessageArrived(`/${deviceID}/online`, 'online');
 
 		expect(isOnline).toBe(true);
@@ -44,7 +44,7 @@ describe('MQTTService', () => {
 
 		let isOnline = true;
 
-		device?.onOnlineChanged((value) => (isOnline = value));
+		device?.on('onlineChanged', (value) => (isOnline = value));
 		(service as any).onMessageArrived(`/${deviceID}/online`, 'offline');
 
 		expect(isOnline).toBe(false);
@@ -57,7 +57,7 @@ describe('MQTTService', () => {
 
 		let isOnline = true;
 
-		device?.onOnlineChanged((value) => (isOnline = value));
+		device?.on('onlineChanged', (value) => (isOnline = value));
 		(service as any).onMessageArrived(`/${deviceID}/online`, 'Wrong');
 
 		expect(isOnline).toBe(false);
@@ -69,7 +69,7 @@ describe('MQTTService', () => {
 
 		let isOccupied = false;
 
-		device?.onOccupiedChanged((value) => (isOccupied = value));
+		device?.on('occupiedChanged', (value) => (isOccupied = value));
 		(service as any).onMessageArrived(`/${deviceID}/status`, 'occupied');
 
 		expect(isOccupied).toBe(true);
@@ -80,7 +80,7 @@ describe('MQTTService', () => {
 
 		let isOccupied = true;
 
-		device?.onOccupiedChanged((value) => (isOccupied = value));
+		device?.on('occupiedChanged', (value) => (isOccupied = value));
 		(service as any).onMessageArrived(`/${deviceID}/status`, 'free');
 
 		expect(isOccupied).toBe(false);
@@ -91,7 +91,7 @@ describe('MQTTService', () => {
 
 		let isOccupied = false;
 
-		device?.onOccupiedChanged((value) => (isOccupied = value));
+		device?.on('occupiedChanged', (value) => (isOccupied = value));
 		(service as any).onMessageArrived(`/${deviceID}/status`, 'Wrong');
 
 		expect(isOccupied).toBe(true);

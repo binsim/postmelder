@@ -1,0 +1,125 @@
+*,
+*::before,
+*::after {
+	font-size: inherit;
+	box-sizing: border-box;
+}
+
+.notServiceConf {
+	width: max-content;
+	height: max-content;
+}
+
+.notServiceConf .grid-container {
+	display: grid;
+	grid-template-columns: auto auto;
+	column-gap: .4em;
+	row-gap: .5em;
+}
+
+.notServiceConf .grid-container>.grid-item:nth-child(2n -1) {
+	margin-left: auto;
+	margin-right: 0;
+}
+
+.notServiceConf .grid-item label::after {
+	content: ": ";
+}
+
+.notServiceConf input[type="text"],
+.notServiceConf input[type="password"] {
+	width: 25ch;
+}
+
+.notServiceConf input[type="number"]::-webkit-inner-spin-button,
+.notServiceConf input[type="number"]::-webkit-outer-spin-button {
+	appearance: none;
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.notServiceConf input[type="number"] {
+	width: 5ch;
+	appearance: textfield;
+	-moz-appearance: textfield;
+}
+
+.configured-devices,
+.found-devices {
+	width: 100%;
+	text-align: center;
+}
+
+.configured-devices {
+	margin-bottom: 3em;
+}
+
+.configure-esp-device,
+.configure-esp-device form {
+	width: max-content;
+	height: max-content;
+}
+
+.configure-esp-device h1 {
+	text-align: center;
+}
+
+.configure-esp-device .grid-container {
+	display: grid;
+	grid-template-columns: max-content auto;
+	gap: .5em;
+}
+
+.configure-esp-device .grid-container label {
+	grid-column: 1;
+	margin-left: auto;
+	margin-right: 0;
+}
+
+.configure-esp-device .grid-container label::after {
+	content: ': ';
+}
+
+.configure-esp-device .grid-container input[type="number"]::-webkit-inner-spin-button,
+.configure-esp-device .grid-container input[type="number"]::-webkit-outer-spin-button {
+	appearance: none;
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.configure-esp-device .grid-container input[type="number"] {
+	appearance: textfield;
+	-moz-appearance: textfield;
+}
+
+.configure-esp-device textarea {
+	width: 100%;
+	margin-top: .5em;
+}
+
+dialog.testmessage-response .loader-wrapper {
+	position: absolute;
+	width: 100vw;
+	height: 100vh;
+	background-color: white;
+}
+
+.loader {
+	border: 16px solid #f3f3f3;
+	border-top: 16px solid #3498db;
+	border-bottom: 16px solid blue;
+	border-radius: 50%;
+	width: 120px;
+	height: 120px;
+	animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+
+	100% {
+		transform: rotate(360deg);
+	}
+}

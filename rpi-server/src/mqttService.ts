@@ -80,6 +80,8 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 		} else {
 			this._devices[index] = device;
 		}
+
+		saveToFile(this.devices);
 	}
 
 	private onMessageArrived(topic: string, payload: Buffer) {

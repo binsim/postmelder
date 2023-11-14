@@ -1,0 +1,56 @@
+<dialog class="notServiceConf">
+	<script>
+		var DEFAULT_SMTP_PORT = <%= constants.DEFAULT_SMTP_PORT %>
+	</script>
+	<form action="/notServiceConf" method="post">
+		<div class="grid-container">
+			<div class="grid-item">
+				<label for="host">SMTP Server</label>
+				<input
+					type="text"
+					id="host"
+					name="host"
+					placeholder="smtp.example.com"
+					value="<%= mailConf.host %>"
+				/>
+			</div>
+			<div class="grid-item">
+				<input type="checkbox" name="port-enabled" id="port-enabled" <%=
+				(mailConf.port !== constants.DEFAULT_SMTP_PORT) && 'checked' %>/>
+				<label for="port">Port</label>
+				<input
+					type="number"
+					name="port"
+					id="port"
+					value="<%= mailConf.port ?? constants.DEFUALT_SMTP_PORT %>"
+					min="0"
+				/>
+			</div>
+			<div class="grid-item">
+				<label for="username">User Name</label>
+				<input
+					type="text"
+					id="username"
+					name="username"
+					placeholder="username@example.com"
+					value="<%= mailConf.username %>"
+				/>
+			</div>
+			<div class="grid-item">
+				<input type="checkbox" name="ssl" id="ssl" <%= mailConf.ssl &&
+				'checked' %>>
+				<span>Require SSL</span>
+			</div>
+			<div class="grid-item">
+				<label for="password">Password</label>
+				<input type="password" name="password" id="password" disabled />
+			</div>
+			<!-- <div class="grid-item">
+				<input type="checkbox" name="oauth2" id="oauth2" />
+				<span>OAuth2</span>
+			</div> -->
+		</div>
+		<input type="submit" value="Submit" />
+		<input type="submit" value="Abbrechen" name="cancle" />
+	</form>
+</dialog>
