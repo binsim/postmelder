@@ -5,6 +5,11 @@
 #include <Arduino.h>
 #include <HCSR04.h>
 
+void calibrateEcho();
+void measureMean(int cycles);
+bool belegt();
+bool geleert();
+
 // Abstandssensor
 double *distances;
 byte triggerPin = 13;
