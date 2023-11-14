@@ -1,0 +1,7 @@
+version: '3.7'
+
+services:
+  node:
+    build:
+      target: production
+    command: node dist/main.js

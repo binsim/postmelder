@@ -1,0 +1,35 @@
+version: '3.7'
+
+services:
+  node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: base
+    privileged: true
+    volumes:
+      - ./rpi-server/src:/usr/src/app/src
+      - ./rpi-server/nodemon.json:/usr/src/app/nodemon.json
+      - ./rpi-server/data:/usr/src/app/data
+    container_name: node 
+    expose:
+      - '8080'
+    ports:
+      - '8080:8080'
+    command: npm run dev
+    env_file:
+      - ./.env
+    depends_on:
+      - mqtt
+  
+  mqtt:
+    container_name: eclipse-mosquitto
+    image: eclipse-mosquitto
+    expose: 
+      - '1883'
+    ports:
+      - '1883:1883'
+    volumes: 
+      - ./mosquitto/conf:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
