@@ -1,33 +1,32 @@
-//Pins
-//RGB-LED
+// Pins
+// RGB-LED
 #define RLEDPIN 2
 #define GLEDPIN 3
 #define BLEDPIN 4
 
-
-//Werte
-//Prozentsatz vom kalibrierten Sensormesswert, bei dem das System auslöst
+// Werte
+// Prozentsatz vom kalibrierten Sensormesswert, bei dem das System auslöst
 #define THRESHOLDRATIO 0.95
 
-//Zeit zwischen zwei Überprüfungen, ob das Postfach wieder frei ist in Sekunden
+// Zeit zwischen zwei Überprüfungen, ob das Postfach wieder frei ist in Sekunden
 #define CHECKTIME 20
 
-//Bibliotheken
+// Bibliotheken
 #include <Arduino.h>
 #include <HCSR04.h>
 
-//Funktionen
+// Funktionen
 void calibrateEcho();
 void measureMean(int cycles);
 bool belegt();
 bool geleert();
 
-//Variablen
-// Abstandssensor
+// Variablen
+//  Abstandssensor
 double *distances;
 const byte triggerPin = 13;
 const byte echoCount = 2;
-const byte *echoPins = new byte[echoCount]{12, 11};
+byte *echoPins = new byte[echoCount]{12, 11};
 
 float threshhold1; //-> Flash
 float threshhold2; //-> Flash
