@@ -4,6 +4,10 @@
 #define GLEDPIN 3
 #define BLEDPIN 4
 
+// Sensoren
+#define ULTRASCHALL_1_PIN 12
+#define ULTRASCHALL_2_PIN 11
+
 // Werte
 // Prozentsatz vom kalibrierten Sensormesswert, bei dem das System auslöst
 #define THRESHOLDRATIO 0.95
@@ -26,7 +30,7 @@ bool geleert();
 double *distances;
 const byte triggerPin = 13;
 const byte echoCount = 2;
-byte *echoPins = new byte[echoCount]{12, 11};
+byte *echoPins = new byte[echoCount]{ULTRASCHALL_1_PIN, ULTRASCHALL_2_PIN};
 
 float threshhold1; //-> Flash
 float threshhold2; //-> Flash
