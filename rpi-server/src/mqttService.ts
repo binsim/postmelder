@@ -49,6 +49,11 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 		this._client = connect('mqtt://mqtt', {
 			username: process.env.MQTT_USERNAME,
 			password: process.env.MQTT_PASSWORD,
+			will: {
+				topic: '/server/online',
+				payload: Buffer.from('false'),
+				retain: true,
+			},
 		});
 
 		this._client.on('error', (err: Error) => {
@@ -60,6 +65,9 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 			this.client.subscribe('/devices');
 
 			this.isConnected = true;
+			this.client.publish('/server/online', Buffer.from('true'), {
+				retain: true,
+			});
 		});
 		this._client.on('message', this.onMessageArrived);
 	}
