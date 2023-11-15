@@ -5,13 +5,13 @@
 
 ## Docker
 
-Für das Verwenden wird [Docker](https://www.docker.com/products/docker-desktop/) verwendet und muss dem entsprechend installiert werden. Dies kann beim Raspberry Pi durch folgenden Befehl installiert werden.
+Für das Verwenden wird [Docker](https://www.docker.com/products/docker-desktop/) verwendet und muss dementsprechend installiert werden. Dies kann beim Raspberry Pi durch folgenden Befehl installiert werden:
 
 ```bash
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-Alle folgende Befehle, die mit 'docker-compose' beginnen müssen in dem Ordner ausgeführt werden, der die `docker-compose.yml` beinhaltet.
+Alle folgenden Befehle, die mit 'docker-compose' beginnen, müssen in dem Ordner ausgeführt werden, der die `docker-compose.yml` beinhaltet.
 
 Zum starten der Application wird folgender Befehl verwendet:
 
@@ -35,9 +35,9 @@ docker-compose down
 
 ### Passwort setzen
 
-Zum setzen des Passworts für einen $USERNAME, folgenden Befehl ausführen. Dieses Benutzername und Passwort müssen dann in der .env Datei eingefügt werden und entsprechend für die esp-clients angepasst werden
+Zum setzen des Passworts für einen $USERNAME, folgenden Befehl ausführen. Dieses Benutzername und Passwort müssen dann in der .env Datei eingefügt werden und entsprechend für die esp-clients angepasst werden.
 
-Dieser Befehl muss im Ordner ausgeführt werden, in der auch die `docker-compose.yml` Datei liegt
+Dieser Befehl muss im Ordner ausgeführt werden, in der auch die `docker-compose.yml` Datei liegt.
 
 ```bash
 docker-compose exec mqtt mosquitto_passwd -c /mosquitto/config/mosquitto.passwd $USERNAME
@@ -78,7 +78,7 @@ sudo nmcli con modify hotspot wifi-sec.key-mgmt wpa-psk
 sudo nmcli con modify hotspot wifi-sec.psk "postmelder"
 ```
 
-4. Configure to Run as Access Point
+4. Configure to Run as Access Point:
 
 ```bash
 sudo nmcli con modify hotspot 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared
