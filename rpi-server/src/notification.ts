@@ -1,5 +1,5 @@
 import { Transporter, createTransport } from 'nodemailer';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { scheduleJob } from 'node-schedule';
 import { CheckInterval, IDevice } from './EspDevice';
@@ -193,8 +193,15 @@ export class NotificationService {
 			NotificationService.getOptionsFromConfig(config)
 		);
 		this.conf = config;
-		if (writeToFile)
+		if (writeToFile) {
+			if (!existsSync(CONFIG_FILE)) {
+				mkdirSync(
+					CONFIG_FILE.substring(0, CONFIG_FILE.lastIndexOf('/')),
+					{ recursive: true }
+				);
+			}
 			writeFileSync(CONFIG_FILE, JSON.stringify({ transporter: config }));
+		}
 	}
 
 	private checkForSendingMessage(devices: IDevice[]) {

@@ -1,5 +1,5 @@
 import EventEmitter from 'node:events';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const CONFIG_FILE = 'data/esp-clients.json';
 export const CheckInterals = [
@@ -164,6 +164,11 @@ export function loadFromFile(): IDevice[] {
 }
 export function saveToFile(devices: IDevice[]): void {
 	try {
+		if (!existsSync(CONFIG_FILE)) {
+			mkdirSync(CONFIG_FILE.substring(0, CONFIG_FILE.lastIndexOf('/')), {
+				recursive: true,
+			});
+		}
 		writeFileSync(CONFIG_FILE, JSON.stringify(devices as JSON_Device[]));
 	} catch (error) {
 		console.error(error);
