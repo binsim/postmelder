@@ -1,12 +1,12 @@
 // Pins
 // RGB-LED
-#define RLEDPIN 2
-#define GLEDPIN 3
-#define BLEDPIN 4
+#define RLEDPIN 35
+#define GLEDPIN 32
+#define BLEDPIN 33
 
 // Sensoren
-#define ULTRASCHALL_1_PIN 12
-#define ULTRASCHALL_2_PIN 11
+#define ULTRASCHALL_1_PIN 27
+#define ULTRASCHALL_2_PIN 14
 
 // Werte
 // Prozentsatz vom kalibrierten Sensormesswert, bei dem das System auslöst
@@ -28,7 +28,7 @@ bool geleert();
 // Variablen
 //  Abstandssensor
 double *distances;
-const byte triggerPin = 13;
+const byte triggerPin = 26;
 const byte echoCount = 2;
 byte *echoPins = new byte[echoCount]{ULTRASCHALL_1_PIN, ULTRASCHALL_2_PIN};
 
@@ -56,7 +56,7 @@ void setup()
 
 	calibrateEcho(); // Sensoren auf Fach kalibrieren
 
-	ledcWrite(0, 100); // blaue LED aus
+	ledcWrite(0, 0); // blaue LED aus
 }
 
 // calibrateEcho
