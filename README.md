@@ -31,6 +31,12 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 
 Alle folgenden Befehle, die mit 'docker-compose' beginnen, müssen in dem Ordner ausgeführt werden, der die `docker-compose.yml` beinhaltet.
 
+Beim bauen vom Dockerfile konnte `dl-cdn.alpinelinux.org` nicht aufgelöst werden, dabei half es während der Bauens folgendem Befehl auszuführen:
+
+```bash
+ping dl-cdn.alpinelinux.org
+```
+
 Zum starten der Application wird folgender Befehl verwendet:
 
 ```bash
