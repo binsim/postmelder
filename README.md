@@ -34,19 +34,19 @@ Alle folgenden Befehle, die mit 'docker-compose' beginnen, müssen in dem Ordner
 Zum starten der Application wird folgender Befehl verwendet:
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+sudo docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 Während der Entwicklung kann folgender Befehl verwendet werden:
 
 ```bash
-docker-compose up -d
+sudo docker-compose up -d
 ```
 
 Zum Beenden kann folgender Befehl verwendet werden:
 
 ```bash
-docker-compose down
+sudo docker-compose down
 ```
 
 ## MQTT
@@ -58,7 +58,7 @@ Zum setzen des Passworts für einen $USERNAME, folgenden Befehl ausführen. Dies
 Dieser Befehl muss im Ordner ausgeführt werden, in der auch die `docker-compose.yml` Datei liegt.
 
 ```bash
-docker-compose exec mqtt mosquitto_passwd -c /mosquitto/config/mosquitto.passwd $USERNAME
+sudo docker-compose exec mqtt mosquitto_passwd -c /mosquitto/config/mosquitto.passwd $USERNAME
 ```
 
 # Einstellungen
