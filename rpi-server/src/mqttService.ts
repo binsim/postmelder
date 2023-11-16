@@ -69,7 +69,9 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 				retain: true,
 			});
 		});
-		this._client.on('message', this.onMessageArrived);
+		this._client.on('message', (topic: string, payload: Buffer) =>
+			this.onMessageArrived(topic, payload)
+		);
 	}
 
 	getDeviceByID(id: string): IDevice | undefined {
