@@ -25,7 +25,7 @@ services:
       - mqtt
   
   mqtt:
-    container_name: eclipse-mosquitto
+    container_name: mqtt
     image: eclipse-mosquitto
     expose: 
       - '1883'
