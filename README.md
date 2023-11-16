@@ -5,7 +5,7 @@
 
 ## Docker
 
-Bevor Docker Endgine installiert werden kann, muss das Docker apt repository wie folgt angelegt werden:
+Bevor Docker Engine installiert werden kann, muss das Docker apt repository wie folgt angelegt werden:
 
 ```bash
 # Add Docker's official GPG key:
@@ -26,7 +26,7 @@ sudo apt-get update
 Für das Verwenden wird [Docker](https://www.docker.com/products/docker-desktop/) verwendet und muss dementsprechend installiert werden. Dies kann beim Raspberry Pi durch folgenden Befehl installiert werden:
 
 ```bash
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
 ```
 
 Alle folgenden Befehle, die mit 'docker-compose' beginnen, müssen in dem Ordner ausgeführt werden, der die `docker-compose.yml` beinhaltet.
@@ -66,6 +66,7 @@ Dieser Befehl muss im Ordner ausgeführt werden, in der auch die `docker-compose
 ```bash
 sudo docker-compose exec mqtt mosquitto_passwd -c /mosquitto/config/mosquitto.passwd $USERNAME
 ```
+Sollte die Passwortdatei noch nicht existieren, muss  in der `mosquitto/conf/mosquitto.conf` die letzte Zeile auskommentiert werden (mit #). Nach dem Erstellen von Benutzername und Passwort muss die Auskommentierung wieder rückgangig gemacht werden.
 
 # Einstellungen
 
