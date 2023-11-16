@@ -29,8 +29,10 @@ services:
     image: eclipse-mosquitto
     expose: 
       - '1883'
+      - '8081'
     ports:
       - '1883:1883'
+      - '8081:8081'
     volumes: 
       - ./mosquitto/conf:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
