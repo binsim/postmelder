@@ -64,37 +64,59 @@ describe('MQTTService', () => {
 		expect(device?.isOnline).toBe(false);
 	});
 
-	test('Device occupied message', () => {
+	test('Object added to office box', () => {
 		const device = service.getDeviceByID(deviceID);
+		const testWeight = 50;
 
 		let isOccupied = false;
+		expect(device?.isOccupied).toBe(false);
 
 		device?.on('occupiedChanged', (value) => (isOccupied = value));
-		(service as any).onMessageArrived(`/${deviceID}/status`, 'occupied');
+		(service as any).onMessageArrived(
+			`/${deviceID}/currentWeight`,
+			testWeight
+		);
 
 		expect(isOccupied).toBe(true);
 		expect(device?.isOccupied).toBe(true);
+		expect(device?.currentWeight).toBe(testWeight);
+		expect(device?.history.at(-1)?.weight).toBe(testWeight);
 	});
-	test('Device free message', () => {
+	test('Office box cleared', () => {
 		const device = service.getDeviceByID(deviceID);
 
 		let isOccupied = true;
+		expect(device?.isOccupied).toBe(true);
 
 		device?.on('occupiedChanged', (value) => (isOccupied = value));
-		(service as any).onMessageArrived(`/${deviceID}/status`, 'free');
+		(service as any).onMessageArrived(`/${deviceID}/currentWeight`, 0);
 
 		expect(isOccupied).toBe(false);
 		expect(device?.isOccupied).toBe(false);
+		expect(device?.currentWeight).toBe(0);
+		expect(device?.history.length).toBe(0);
 	});
-	test('Wrong status Message', () => {
-		const device = service.getDeviceByID(deviceID);
 
-		let isOccupied = false;
+	// test('Device free message', () => {
+	// 	const device = service.getDeviceByID(deviceID);
 
-		device?.on('occupiedChanged', (value) => (isOccupied = value));
-		(service as any).onMessageArrived(`/${deviceID}/status`, 'Wrong');
+	// 	let isOccupied = true;
 
-		expect(isOccupied).toBe(true);
-		expect(device?.isOccupied).toBe(true);
-	});
+	// 	device?.on('occupiedChanged', (value) => (isOccupied = value));
+	// 	(service as any).onMessageArrived(`/${deviceID}/status`, 'free');
+
+	// 	expect(isOccupied).toBe(false);
+	// 	expect(device?.isOccupied).toBe(false);
+	// });
+	// test('Wrong status Message', () => {
+	// 	const device = service.getDeviceByID(deviceID);
+
+	// 	let isOccupied = false;
+
+	// 	device?.on('occupiedChanged', (value) => (isOccupied = value));
+	// 	(service as any).onMessageArrived(`/${deviceID}/status`, 'Wrong');
+
+	// 	expect(isOccupied).toBe(true);
+	// 	expect(device?.isOccupied).toBe(true);
+	// });
 });
