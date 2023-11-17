@@ -107,8 +107,7 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 					new Device({
 						id,
 						subscriber: [],
-						notificationTitle: '',
-						notificationBody: '',
+						history: [],
 					})
 				);
 

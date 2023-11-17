@@ -133,8 +133,10 @@ app.post('/config-device', (req, res) => {
 		device.boxNumber = undefined;
 		device.notificationBody = undefined;
 		device.notificationTitle = undefined;
-		device.subscriber = undefined;
+		device.subscriber = [];
 		device.checkInterval = undefined;
+		device.lastEmptied = undefined;
+		device.history = [];
 	} else {
 		req.body.boxnumber = Number(req.body.boxnumber);
 		if (isNaN(req.body.boxnumber)) {

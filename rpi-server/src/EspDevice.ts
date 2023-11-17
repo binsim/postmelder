@@ -12,13 +12,13 @@ export type CheckInterval = (typeof CheckInterals)[number];
 
 interface JSON_Device {
 	id: string;
-	subscriber?: string[];
+	subscriber: string[];
 	notificationTitle?: string;
 	notificationBody?: string;
 	boxNumber?: number;
 	checkInterval?: CheckInterval;
-	lastEmptied: string;
-	history: { timeStamp: string; weight: number }[];
+	lastEmptied?: number;
+	history: { timeStamp: number; weight: number }[];
 }
 
 export declare interface IDevice extends JSON_Device {
@@ -74,6 +74,16 @@ export class Device extends EventEmitter implements IDevice {
 				this.isOnline = payload.toString() === 'online';
 				break;
 			// TODO: add getting new weight
+			case 'currentWeight':
+				const newWeight = Number(payload.toString());
+				const timeStamp = Date.now().valueOf();
+				if (newWeight <= 0) {
+					this.lastEmptied = timeStamp;
+					this.history.splice(0, this.history.length);
+				} else {
+					this.history.push({ timeStamp, weight: newWeight });
+				}
+				break;
 			default:
 				break;
 		}
@@ -136,6 +146,10 @@ export class Device extends EventEmitter implements IDevice {
 	}
 	get lastEmptied() {
 		return this._device.lastEmptied;
+	}
+	private set lastEmptied(value) {
+		this._device.lastEmptied = value;
+		// TODO: Emit event
 	}
 	get history() {
 		return this._device.history;
