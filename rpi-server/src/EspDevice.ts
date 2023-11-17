@@ -80,8 +80,11 @@ export class Device extends EventEmitter implements IDevice {
 				if (newWeight <= 0) {
 					this.lastEmptied = timeStamp;
 					this.history.splice(0, this.history.length);
+					this.emit('occupiedChanged', false);
 				} else {
 					this.history.push({ timeStamp, weight: newWeight });
+					if (this.history.length === 1)
+						this.emit('occupiedChanged', false);
 				}
 				break;
 			default:
