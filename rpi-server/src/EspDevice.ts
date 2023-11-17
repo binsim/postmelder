@@ -55,15 +55,11 @@ export declare interface IDevice extends JSON_Device {
 export class Device extends EventEmitter implements IDevice {
 	private _device: JSON_Device;
 	private _isOnline: boolean = false;
-	private _currentWeight: number;
 	messageAlreadySent: boolean = false;
 
 	constructor(device: JSON_Device) {
 		super();
 		this._device = device;
-
-		// TODO: Calc currentWeight
-		this._currentWeight = 0;
 	}
 
 	_onMessageArrived(topic: string, payload: Buffer) {
@@ -84,7 +80,7 @@ export class Device extends EventEmitter implements IDevice {
 				} else {
 					this.history.push({ timeStamp, weight: newWeight });
 					if (this.history.length === 1)
-						this.emit('occupiedChanged', false);
+						this.emit('occupiedChanged', true);
 				}
 				break;
 			default:
@@ -136,7 +132,7 @@ export class Device extends EventEmitter implements IDevice {
 		this.emit('onlineChanged', this._isOnline);
 	}
 	get isOccupied() {
-		return this._currentWeight > 0;
+		return this.currentWeight > 0;
 	}
 	get isCompletelyConfiguerd() {
 		return (
@@ -145,7 +141,9 @@ export class Device extends EventEmitter implements IDevice {
 		);
 	}
 	get currentWeight() {
-		return this._currentWeight;
+		let weight = 0;
+		this.history.forEach((i) => (weight += i.weight));
+		return weight;
 	}
 	get lastEmptied() {
 		return this._device.lastEmptied;
