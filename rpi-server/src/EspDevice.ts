@@ -17,12 +17,15 @@ interface JSON_Device {
 	notificationBody?: string;
 	boxNumber?: number;
 	checkInterval?: CheckInterval;
+	lastEmptied: string;
+	history: { timeStamp: string; weight: number }[];
 }
 
 export declare interface IDevice extends JSON_Device {
 	get isOnline(): boolean;
 	get isOccupied(): boolean;
 	get isCompletelyConfiguerd(): boolean;
+	get currentWeight(): number;
 	messageAlreadySent: boolean;
 
 	on(
@@ -52,12 +55,15 @@ export declare interface IDevice extends JSON_Device {
 export class Device extends EventEmitter implements IDevice {
 	private _device: JSON_Device;
 	private _isOnline: boolean = false;
-	private _isOccupied: boolean = false;
+	private _currentWeight: number;
 	messageAlreadySent: boolean = false;
 
 	constructor(device: JSON_Device) {
 		super();
 		this._device = device;
+
+		// TODO: Calc currentWeight
+		this._currentWeight = 0;
 	}
 
 	_onMessageArrived(topic: string, payload: Buffer) {
@@ -67,9 +73,7 @@ export class Device extends EventEmitter implements IDevice {
 			case 'online':
 				this.isOnline = payload.toString() === 'online';
 				break;
-			case 'status':
-				this.isOccupied = payload.toString() !== 'free';
-				break;
+			// TODO: add getting new weight
 			default:
 				break;
 		}
@@ -119,12 +123,7 @@ export class Device extends EventEmitter implements IDevice {
 		this.emit('onlineChanged', this._isOnline);
 	}
 	get isOccupied() {
-		return this._isOccupied;
-	}
-	private set isOccupied(value) {
-		if (value === this._isOccupied) return;
-		this._isOccupied = value;
-		this.emit('occupiedChanged', this._isOccupied);
+		return this._currentWeight > 0;
 	}
 	get isCompletelyConfiguerd() {
 		return (
@@ -132,7 +131,15 @@ export class Device extends EventEmitter implements IDevice {
 			Number(this._device.subscriber?.length) > 0
 		);
 	}
-
+	get currentWeight() {
+		return this._currentWeight;
+	}
+	get lastEmptied() {
+		return this._device.lastEmptied;
+	}
+	get history() {
+		return this._device.history;
+	}
 	public toJSON() {
 		return {
 			...this._device,
