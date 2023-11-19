@@ -22,15 +22,14 @@ app.set('view engine', 'ejs');
 NotificationService.Instance;
 const stateService: IStateService = new StateService();
 
-const mqttService: IMQTTService = new MQTTService();
-mqttService.on('connectionChanged', (value) =>
+MQTTService.Instance.on('connectionChanged', (value) =>
 	stateService.mqttOnlineStateChanged(value)
 );
-mqttService.on('deviceAdded', (device) => {
+MQTTService.Instance.on('deviceAdded', (device) => {
 	NotificationService.Instance.addDevice(device);
 	stateService.addDeviceListener(device);
 });
-mqttService.connect();
+MQTTService.Instance.connect();
 //#endregion Setup
 
 //#region API
@@ -40,7 +39,7 @@ app.get('/', (req: Request, res: Response) => {
 		const configured: IDevice[] = [];
 		const toConfigure: IDevice[] = [];
 
-		mqttService.devices.forEach((device) => {
+		MQTTService.Instance.devices.forEach((device) => {
 			if (device.isCompletelyConfiguerd) {
 				configured.push(device);
 			} else {
@@ -71,7 +70,7 @@ app.get('/testMessage', async (req, res) => {
 		res.status(400).send('ID is not a string');
 		return;
 	}
-	const device = mqttService.getDeviceByID(req.query.id);
+	const device = MQTTService.Instance.getDeviceByID(req.query.id);
 	if (device === undefined) {
 		res.status(400).send('Entered id not found');
 		return;
@@ -80,6 +79,25 @@ app.get('/testMessage', async (req, res) => {
 	const response = await NotificationService.Instance.sendTestMessage(device);
 	console.log(response);
 	res.status(200).json(response);
+});
+app.get('/boxDetails', (req, res) => {
+	if (req.query.id === undefined) {
+		res.sendStatus(404);
+		return;
+	}
+	const device = MQTTService.Instance.getDeviceByID(req.query.id as string);
+
+	if (device === undefined) {
+		res.sendStatus(404);
+		return;
+	}
+
+	console.log(device);
+
+	res.status(200).json({
+		lastEmptied: device.lastEmptied,
+		history: device.history,
+	});
 });
 app.post('/notServiceConf', async (req, res) => {
 	if (req.body.cancle !== undefined) {
@@ -122,7 +140,7 @@ app.post('/config-device', (req, res) => {
 		return;
 	}
 
-	const device = mqttService.getDeviceByID(req.body.id);
+	const device = MQTTService.Instance.getDeviceByID(req.body.id);
 	if (device === undefined) {
 		// Unexpected can't add new device from web
 		res.sendStatus(500);
@@ -155,7 +173,7 @@ app.post('/config-device', (req, res) => {
 		device.checkInterval = req.body.checkinterval;
 	}
 
-	mqttService.updateDevice(device);
+	MQTTService.Instance.updateDevice(device);
 
 	res.status(200);
 	res.redirect('/');

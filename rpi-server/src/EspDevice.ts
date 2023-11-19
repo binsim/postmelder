@@ -1,5 +1,6 @@
 import EventEmitter from 'node:events';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { MQTTService } from './mqttService';
 
 const CONFIG_FILE = 'data/esp-clients.json';
 export const CheckInterals = [
@@ -82,6 +83,8 @@ export class Device extends EventEmitter implements IDevice {
 					if (this.history.length === 1)
 						this.emit('occupiedChanged', true);
 				}
+
+				saveToFile(MQTTService.Instance.devices);
 				break;
 			default:
 				break;
