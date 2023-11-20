@@ -109,7 +109,19 @@ sudo nmcli con modify hotspot wifi-sec.psk "postmelder"
 sudo nmcli con modify hotspot 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared
 ```
 
-Einstellung können mit folgenden Befehl getätigt werden:
+5. Hide SSID
+
+Mit folgendem Befehl kann die SSID versteckt werden. (true: versteckt; false: öffentlich)
+
+```bash
+sudo nmcli con modify hotspot 802-11-wireless.hidden true
+```
+Nach dem Ausführen des Befehls muss der RaspberryPi neugestartet werden, um die Änderung zu übernehmen.
+
+
+6. Weitere Einstellung
+
+Weitere Einstellung können mit folgenden Befehl getätigt werden:
 
 ```bash
 sudo nmtui
