@@ -111,11 +111,15 @@ sudo nmcli con modify hotspot 802-11-wireless.mode ap 802-11-wireless.band bg ip
 
 5. Hide SSID
 
-Nach dem Ausführen des folgenden Befehls muss der RaspberryPi neugestartet werden.
+Mit folgendem Befehl kann die SSID versteckt werden. (true: versteckt; false: öffentlich)
 
 ```bash
 sudo nmcli con modify hotspot 802-11-wireless.hidden true
 ```
+Nach dem Ausführen des Befehls muss der RaspberryPi neugestartet werden, um die Änderung zu übernehmen.
+
+
+6. Weitere Einstellung
 
 Weitere Einstellung können mit folgenden Befehl getätigt werden:
 
