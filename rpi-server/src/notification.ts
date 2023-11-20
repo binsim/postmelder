@@ -215,8 +215,9 @@ export class NotificationService {
 		msg: string | undefined,
 		device: IDevice
 	): string | undefined {
-		console.log({ msg, BOXNR: device.boxNumber?.toString() });
-		return msg?.replace(
+		if (msg === undefined) return undefined;
+
+		return msg.replace(
 			new RegExp('{BOXNR}', 'g'),
 			device.boxNumber?.toString() ?? '{BOXNR:undefined}'
 		);
