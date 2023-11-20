@@ -174,13 +174,16 @@ export class NotificationService {
 				const info: MailReturn = await this.transporter!.sendMail({
 					from: this.conf.username,
 					to: device.subscriber!.join(', '),
-					subject: this.insertVariables(
+					subject: NotificationService.insertVariables(
 						isTestMessage
 							? `Test: ${device.notificationTitle}`
 							: device.notificationTitle,
 						device
 					),
-					text: this.insertVariables(device.notificationBody, device),
+					text: NotificationService.insertVariables(
+						device.notificationBody,
+						device
+					),
 				});
 				resolve(info);
 			} catch (err) {
@@ -208,12 +211,13 @@ export class NotificationService {
 		}
 	}
 
-	private insertVariables(
+	private static insertVariables(
 		msg: string | undefined,
 		device: IDevice
 	): string | undefined {
+		console.log({ msg, BOXNR: device.boxNumber?.toString() });
 		return msg?.replace(
-			'/${BOXNR}/g',
+			new RegExp('{BOXNR}', 'g'),
 			device.boxNumber?.toString() ?? '{BOXNR:undefined}'
 		);
 	}
