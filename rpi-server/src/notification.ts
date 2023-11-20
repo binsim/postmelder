@@ -174,10 +174,13 @@ export class NotificationService {
 				const info: MailReturn = await this.transporter!.sendMail({
 					from: this.conf.username,
 					to: device.subscriber!.join(', '),
-					subject: isTestMessage
-						? `Test: ${device.notificationTitle}`
-						: device.notificationTitle,
-					text: device.notificationBody,
+					subject: this.insertVariables(
+						isTestMessage
+							? `Test: ${device.notificationTitle}`
+							: device.notificationTitle,
+						device
+					),
+					text: this.insertVariables(device.notificationBody, device),
 				});
 				resolve(info);
 			} catch (err) {
@@ -188,6 +191,7 @@ export class NotificationService {
 			if (!isTestMessage) device.messageAlreadySent = true;
 		});
 	}
+
 	updateConfig(config: INotificationConfig, writeToFile = true) {
 		this.transporter = createTransport(
 			NotificationService.getOptionsFromConfig(config)
@@ -202,6 +206,16 @@ export class NotificationService {
 			}
 			writeFileSync(CONFIG_FILE, JSON.stringify({ transporter: config }));
 		}
+	}
+
+	private insertVariables(
+		msg: string | undefined,
+		device: IDevice
+	): string | undefined {
+		return msg?.replace(
+			'/${BOXNR}/g',
+			device.boxNumber?.toString() ?? '{BOXNR:undefined}'
+		);
 	}
 
 	private checkForSendingMessage(devices: IDevice[]) {
