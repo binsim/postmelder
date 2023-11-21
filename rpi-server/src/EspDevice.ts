@@ -1,5 +1,6 @@
 import EventEmitter from 'node:events';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { MQTTService } from './mqttService';
 
 const CONFIG_FILE = 'data/esp-clients.json';
 export const CheckInterals = [
@@ -12,17 +13,20 @@ export type CheckInterval = (typeof CheckInterals)[number];
 
 interface JSON_Device {
 	id: string;
-	subscriber?: string[];
+	subscriber: string[];
 	notificationTitle?: string;
 	notificationBody?: string;
 	boxNumber?: number;
 	checkInterval?: CheckInterval;
+	lastEmptied?: number;
+	history: { timeStamp: number; weight: number }[];
 }
 
 export declare interface IDevice extends JSON_Device {
 	get isOnline(): boolean;
 	get isOccupied(): boolean;
 	get isCompletelyConfiguerd(): boolean;
+	get currentWeight(): number;
 	messageAlreadySent: boolean;
 
 	on(
@@ -52,7 +56,6 @@ export declare interface IDevice extends JSON_Device {
 export class Device extends EventEmitter implements IDevice {
 	private _device: JSON_Device;
 	private _isOnline: boolean = false;
-	private _isOccupied: boolean = false;
 	messageAlreadySent: boolean = false;
 
 	constructor(device: JSON_Device) {
@@ -67,8 +70,21 @@ export class Device extends EventEmitter implements IDevice {
 			case 'online':
 				this.isOnline = payload.toString() === 'online';
 				break;
-			case 'status':
-				this.isOccupied = payload.toString() !== 'free';
+			// TODO: add getting new weight
+			case 'currentWeight':
+				const newWeight = Number(payload.toString());
+				const timeStamp = Date.now().valueOf();
+				if (newWeight <= 0) {
+					this.lastEmptied = timeStamp;
+					this.history.splice(0, this.history.length);
+					this.emit('occupiedChanged', false);
+				} else {
+					this.history.push({ timeStamp, weight: newWeight });
+					if (this.history.length === 1)
+						this.emit('occupiedChanged', true);
+				}
+
+				saveToFile(MQTTService.Instance.devices);
 				break;
 			default:
 				break;
@@ -119,12 +135,7 @@ export class Device extends EventEmitter implements IDevice {
 		this.emit('onlineChanged', this._isOnline);
 	}
 	get isOccupied() {
-		return this._isOccupied;
-	}
-	private set isOccupied(value) {
-		if (value === this._isOccupied) return;
-		this._isOccupied = value;
-		this.emit('occupiedChanged', this._isOccupied);
+		return this.currentWeight > 0;
 	}
 	get isCompletelyConfiguerd() {
 		return (
@@ -132,7 +143,21 @@ export class Device extends EventEmitter implements IDevice {
 			Number(this._device.subscriber?.length) > 0
 		);
 	}
-
+	get currentWeight() {
+		let weight = 0;
+		this.history.forEach((i) => (weight += i.weight));
+		return weight;
+	}
+	get lastEmptied() {
+		return this._device.lastEmptied;
+	}
+	private set lastEmptied(value) {
+		this._device.lastEmptied = value;
+		// TODO: Emit event
+	}
+	get history() {
+		return this._device.history;
+	}
 	public toJSON() {
 		return {
 			...this._device,
