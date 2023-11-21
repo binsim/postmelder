@@ -18,6 +18,14 @@ const testmessage_response_dialog = document.querySelector(
 const testmessage_response_dialog_close_btn =
 	testmessage_response_dialog.querySelector('button#close');
 
+const box_details_dialog = document.querySelector('dialog.box-details');
+const box_details_dialog_close_btn =
+	box_details_dialog.querySelector('button#close');
+
+box_details_dialog_close_btn.addEventListener('click', () => {
+	box_details_dialog.close();
+});
+
 testmessage_response_dialog_close_btn.addEventListener('click', (e) => {
 	testmessage_response_dialog.close();
 });
@@ -89,6 +97,43 @@ async function testMessage(e, deviceId) {
 	}
 }
 
-function showNotificationServiceConfDialog() {
+function shoNotificationServiceConfDialog() {
 	notification_conf_dialog.showModal();
+}
+
+const history_h2_default_text = undefined;
+async function boxDetails(e, deviceId) {
+	e.stopPropagation();
+
+	const last_emptied_p = box_details_dialog.querySelector('p');
+	const history_h2 = box_details_dialog.querySelectorAll('h2')[1];
+	const history_ul = box_details_dialog.querySelector('ul');
+
+	if (history_h2_default_text === undefined) {
+		history_h2_default_text = history_h2.innerText;
+	} else {
+		history_h2.innerText = history_h2_default_text;
+	}
+
+	box_details_dialog.showModal();
+
+	const response = await (await fetch('/boxDetails?id=' + deviceId)).json();
+
+	const last_emptied = new Date(response.lastEmptied);
+	last_emptied_p.innerText = last_emptied.toLocaleString();
+
+	if (response.history.length > 0) {
+		response.history.forEach((i) => {
+			const li = document.createElement('li');
+			li.innerHTML = `<span class="weight">${
+				i.weight
+			} g</span> erkannt am <span class="time">${new Date(
+				i.timeStamp
+			).toLocaleString()}</span>`;
+			history_ul.appendChild(li);
+		});
+	} else {
+		history_ul.innerHTML = '';
+		history_h2.innerText = 'Postfach ist leer';
+	}
 }

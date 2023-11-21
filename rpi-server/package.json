@@ -4,9 +4,8 @@
 	"description": "",
 	"main": "main.ts",
 	"scripts": {
-		"build": "npx tsc",
-		"start": "NODE_PATH=./dist node dist/main.js",
-		"dev": "npx nodemon src/main.ts",
+		"start": "npx ts-node src/main.ts",
+		"dev": "nodemon src/main.ts",
 		"test": "jest"
 	},
 	"keywords": [],

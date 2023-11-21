@@ -19,10 +19,16 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 	private _client: MqttClient | undefined;
 	private _deviceSaveToFileTimeout: NodeJS.Timeout | undefined = undefined;
 	private _isConnected = false;
+	private static _instance: MQTTService;
 
-	constructor() {
+	private constructor() {
 		super();
 		this._devices = loadFromFile();
+	}
+	static get Instance() {
+		if (this._instance === undefined) this._instance = new MQTTService();
+
+		return this._instance;
 	}
 
 	private get client(): MqttClient {
@@ -107,8 +113,7 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 					new Device({
 						id,
 						subscriber: [],
-						notificationTitle: '',
-						notificationBody: '',
+						history: [],
 					})
 				);
 

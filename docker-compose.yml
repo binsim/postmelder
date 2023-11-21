@@ -18,7 +18,7 @@ services:
       - '8080'
     ports:
       - '8080:8080'
-    command: npm run dev
+    command: npm run start
     env_file:
       - ./.env
     depends_on:
