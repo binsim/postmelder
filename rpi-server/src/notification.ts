@@ -3,13 +3,33 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { scheduleJob } from 'node-schedule';
 import { CheckInterval, IDevice } from './EspDevice';
+import { createCipheriv, randomBytes } from 'node:crypto';
 
 export const DEFAULT_SMTP_PORT = 587;
 const CONFIG_FILE = 'data/mail.json';
 
+const key = Buffer.from(process.env.KEY ?? '123456789');
+
+function encrypt(text: string, iv: Buffer | undefined = undefined) {
+	iv = iv ?? randomBytes(16);
+	const cipher = createCipheriv('aes-256-ccm', key, iv);
+
+	const data = Buffer.concat([cipher.update(text), cipher.final()]);
+
+	return { iv, data };
+}
+function decrypt(hash: { iv: Buffer; data: Buffer }) {
+	const decipher = createCipheriv('aes-256-ccm', key, hash.iv);
+
+	return Buffer.concat([
+		decipher.update(hash.data),
+		decipher.final(),
+	]).toString();
+}
+
 interface INotificationConfig {
 	username: string;
-	password: string;
+	password: { iv: string; data: string };
 	host: string;
 	port?: number;
 	secure: boolean;
@@ -200,7 +220,18 @@ export class NotificationService {
 					{ recursive: true }
 				);
 			}
-			writeFileSync(CONFIG_FILE, JSON.stringify({ transporter: config }));
+
+			let writeConf: any = config;
+			writeConf.password = encrypt(
+				writeConf.password.data,
+				writeConf.password.iv !== undefined
+					? Buffer.from(writeConf.password.iv)
+					: undefined
+			);
+			writeFileSync(
+				CONFIG_FILE,
+				JSON.stringify({ transporter: writeConf })
+			);
 		}
 	}
 
@@ -218,7 +249,10 @@ export class NotificationService {
 			port: config.port ?? DEFAULT_SMTP_PORT,
 			auth: {
 				user: config.username,
-				pass: config.password,
+				pass: decrypt({
+					iv: Buffer.from(config.password.iv),
+					data: Buffer.from(config.password.data),
+				}),
 			},
 		};
 
