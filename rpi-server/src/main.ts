@@ -3,11 +3,11 @@ import { config } from 'dotenv';
 import { IMQTTService, MQTTService } from './mqttService';
 import { StateService, IStateService } from './status';
 import { DEFAULT_SMTP_PORT, NotificationService } from './notification';
-import { CheckInterals, IDevice } from './EspDevice';
+import { CheckIntervals, IDevice } from './EspDevice';
 import { encrypt } from './encrypt';
 
 //#region Setup
-// Importend for using .env variables
+// Important for using .env variables
 config();
 const PORT = 8080;
 const app: Express = express();
@@ -41,7 +41,7 @@ app.get('/', (req: Request, res: Response) => {
 		const toConfigure: IDevice[] = [];
 
 		MQTTService.Instance.devices.forEach((device) => {
-			if (device.isCompletelyConfiguerd) {
+			if (device.isCompletelyConfigured) {
 				configured.push(device);
 			} else {
 				toConfigure.push(device);
@@ -57,7 +57,7 @@ app.get('/', (req: Request, res: Response) => {
 	res.render('pages/index', {
 		devices,
 		constants: {
-			checkinterval: CheckInterals,
+			checkIntervals: CheckIntervals,
 			DEFAULT_SMTP_PORT,
 		},
 		mailConf: {
@@ -101,7 +101,7 @@ app.get('/boxDetails', (req, res) => {
 	});
 });
 app.post('/notServiceConf', async (req, res) => {
-	if (req.body.cancle !== undefined) {
+	if (req.body.cancel !== undefined) {
 		res.redirect('/');
 		return;
 	}
@@ -142,7 +142,7 @@ app.post('/notServiceConf', async (req, res) => {
 	console.log({ body: req.body });
 });
 app.post('/config-device', (req, res) => {
-	if (req.body.cancle !== undefined) {
+	if (req.body.cancel !== undefined) {
 		res.status(200);
 		res.redirect('/');
 		return;
@@ -164,8 +164,8 @@ app.post('/config-device', (req, res) => {
 		device.lastEmptied = undefined;
 		device.history = [];
 	} else {
-		req.body.boxnumber = Number(req.body.boxnumber);
-		if (isNaN(req.body.boxnumber)) {
+		req.body.boxNumber = Number(req.body.boxNumber);
+		if (isNaN(req.body.boxNumber)) {
 			res.status(400).json({
 				...req.body,
 				error: 'boxNumber not a number',
@@ -174,11 +174,11 @@ app.post('/config-device', (req, res) => {
 		}
 
 		// Updating the device info
-		device.boxNumber = req.body.boxnumber;
+		device.boxNumber = req.body.boxNumber;
 		device.notificationBody = req.body.body;
 		device.notificationTitle = req.body.subject;
 		device.subscriber = req.body.to.split('; ');
-		device.checkInterval = req.body.checkinterval;
+		device.checkInterval = req.body.checkInterval;
 	}
 
 	MQTTService.Instance.updateDevice(device);

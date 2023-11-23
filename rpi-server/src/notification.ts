@@ -155,7 +155,7 @@ export class NotificationService {
 	): Promise<MailReturn> {
 		return new Promise(async (resolve, reject) => {
 			if (device.subscriber!.length <= 0) {
-				reject(new Error('No target for message proviede'));
+				reject(new Error('No target for message provided'));
 				return;
 			}
 			if (

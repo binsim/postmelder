@@ -52,9 +52,9 @@ notification_port_checkbox.addEventListener('change', () => {
 function configureDevice(device) {
 	// Getting all elements
 	const id = configure_esp_device_dialog.querySelector('#id');
-	const boxNumber = configure_esp_device_dialog.querySelector('#boxnumber');
+	const boxNumber = configure_esp_device_dialog.querySelector('#boxNumber');
 	const checkInterval =
-		configure_esp_device_dialog.querySelector('#checkinterval');
+		configure_esp_device_dialog.querySelector('#checkInterval');
 	const to = configure_esp_device_dialog.querySelector('#to');
 	const subject = configure_esp_device_dialog.querySelector('#subject');
 	const body = configure_esp_device_dialog.querySelector('#body');
