@@ -229,6 +229,7 @@ export function saveToFile(devices: IDevice[]): void {
 			});
 		}
 		writeFileSync(CONFIG_FILE, JSON.stringify(devices as JSON_Device[]));
+		logger.info(`Updated esp-clients.json`);
 	} catch (error) {
 		logger.error(error);
 	}
