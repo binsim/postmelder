@@ -2,3 +2,4 @@ node_modules
 dist
 data/esp-clients.json
 data/mail.json
+data/logging.log

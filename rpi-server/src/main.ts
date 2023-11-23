@@ -7,6 +7,10 @@ import { CheckIntervals, IDevice } from './EspDevice';
 import { encrypt } from './encrypt';
 import { logger } from './logging';
 
+logger.info(
+	'#################################################  Starting   ###########################################################'
+);
+
 //#region Setup
 // Important for using .env variables
 config();
