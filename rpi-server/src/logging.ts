@@ -18,6 +18,8 @@ export const logger = createLogger({
 		new winston.transports.Console({
 			stderrLevels: ['error'],
 		}),
-		new winston.transports.File({ filename: 'data/logging.log' }),
+		new winston.transports.File({
+			filename: `data/${new Date(Date.now()).toDateString()}.log`,
+		}),
 	],
 });
