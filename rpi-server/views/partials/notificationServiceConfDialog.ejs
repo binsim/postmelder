@@ -6,35 +6,17 @@
 		<div class="grid-container">
 			<div class="grid-item">
 				<label for="host">SMTP Server</label>
-				<input
-					type="text"
-					id="host"
-					name="host"
-					placeholder="smtp.example.com"
-					value="<%= mailConf.host %>"
-				/>
+				<input type="text" id="host" name="host" placeholder="smtp.example.com" value="<%= mailConf.host %>" />
 			</div>
 			<div class="grid-item">
 				<input type="checkbox" name="port-enabled" id="port-enabled" <%=
-				(mailConf.port !== undefined && mailConf.port !== constants.DEFAULT_SMTP_PORT) && 'checked' %>/>
+				(mailConf.port !== undefined && mailConf.port !== constants.DEFAULT_SMTP_PORT) && 'checked' %> />
 				<label for="port">Port</label>
-				<input
-					type="number"
-					name="port"
-					id="port"
-					value="<%= mailConf.port ?? constants.DEFAULT_SMTP_PORT %>"
-					min="0"
-				/>
+				<input type="number" name="port" id="port" value="<%= mailConf.port ?? constants.DEFAULT_SMTP_PORT %>" min="0" />
 			</div>
 			<div class="grid-item">
 				<label for="username">User Name</label>
-				<input
-					type="text"
-					id="username"
-					name="username"
-					placeholder="username@example.com"
-					value="<%= mailConf.username %>"
-				/>
+				<input type="text" id="username" name="username" placeholder="username@example.com" value="<%= mailConf.username %>" />
 			</div>
 			<div class="grid-item">
 				<input type="checkbox" name="ssl" id="ssl" <%= mailConf.ssl &&

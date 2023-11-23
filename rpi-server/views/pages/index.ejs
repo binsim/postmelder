@@ -1,59 +1,62 @@
 <!DOCTYPE html>
 <html lang="">
+
 <head>
-    <%- include('../partials/head'); %>
+	<%- include('../partials/head'); %>
 </head>
 
 <header>
-    <%- // include('../partials/header'); %>
-    <button id='show-notification-service-conf-dialog'>SMTP Einstellungen</button>
+	<%- // include('../partials/header'); %>
+	<button id='show-notification-service-conf-dialog'>SMTP Einstellungen</button>
 </header>
 
 <main>
-    <%- include('../partials/boxDetailsDialog') %>
-    <%- include('../partials/notificationServiceConfDialog') -%>
-    <%- include('../partials/testMessageResponseDialog')%>
-    <%- include('../partials/configureDeviceDialog')%>
-    <table class="configured-devices">
-    <caption>Konfigurierte Postfächer</caption>
-    <tr>
-        <th>ESP-Client ID</th>
-        <th>Fachnummer</th>
-        <th>Intervall</th>
-        <th>Benachrichtigungsziel</th>
-    </tr>
-<% devices.configured.forEach(device => { %>
-    <tr onclick="configureDevice(<%= JSON.stringify(device)%>)">
-    <td><%= device.id %></td>
-    <td><%= device.boxNumber %></td>
-    <td><%= device.checkInterval %></td>
-    <td><%= device.subscriber?.join('; ') %></td>
-    <td><button onclick="boxDetails(event, '<%= device.id %>')">Details</button><button onclick="testMessage(event, '<%= device.id %>')">Testnachricht</td>
-    </tr>
-<% }) %>
-    </table>
+	<%- include('../partials/boxDetailsDialog') %>
+	<%- include('../partials/notificationServiceConfDialog') -%>
+	<%- include('../partials/testMessageResponseDialog')%>
+	<%- include('../partials/configureDeviceDialog')%>
+	<table class="configured-devices">
+		<caption>Konfigurierte Postfächer</caption>
+		<tr>
+			<th>ESP-Client ID</th>
+			<th>Fachnummer</th>
+			<th>Intervall</th>
+			<th>Benachrichtigungsziel</th>
+		</tr>
+		<% devices.configured.forEach(device => { %>
+		<tr onclick="configureDevice(<%= JSON.stringify(device)%>)">
+			<td><%= device.id %></td>
+			<td><%= device.boxNumber %></td>
+			<td><%= device.checkInterval %></td>
+			<td><%= device.subscriber?.join('; ') %></td>
+			<td><button onclick="boxDetails(event, '<%= device.id %>')">Details</button><button onclick="testMessage(event, '<%= device.id %>')">Testnachricht</td>
+		</tr>
+		<% }) %>
+	</table>
 
-    <table class="found-devices">
-   <caption>Weitere gefundene Geräte</caption> 
-   <tr>
-   <th>ESP-Client ID</th>
-   <th>Fachnummer</th>
-   <th>Intervall</th>
-   <th>Benachrichtigungsziel</th>
-   </tr>
-   <% devices.toConfigure.forEach(device => { %>
-   <tr onclick="configureDevice(<%= JSON.stringify(device) %>)">
-   <td><%= device.id %> <input type="hidden" name="id" value="<%=device.id%>"></td>
-   <td><%= device.boxnumber %></td>
-   <td><%= device.checkInterval %></td>
-   <td><%= device.subscriber?.join('; ') %><td>
-   </tr>
-   <% })%>
-    </table>
+	<table class="found-devices">
+		<caption>Weitere gefundene Geräte</caption>
+		<tr>
+			<th>ESP-Client ID</th>
+			<th>Fachnummer</th>
+			<th>Intervall</th>
+			<th>Benachrichtigungsziel</th>
+		</tr>
+		<% devices.toConfigure.forEach(device => { %>
+		<tr onclick="configureDevice(<%= JSON.stringify(device) %>)">
+			<td><%= device.id %> <input type="hidden" name="id" value="<%=device.id%>"></td>
+			<td><%= device.boxnumber %></td>
+			<td><%= device.checkInterval %></td>
+			<td><%= device.subscriber?.join('; ') %>
+			<td>
+		</tr>
+		<% })%>
+	</table>
 </main>
 <footer>
-    <%- //include('../partials/footer'); %>
+	<%- //include('../partials/footer'); %>
 </footer>
 
 </body>
+
 </html>

@@ -1,26 +1,26 @@
-<dialog class="configure-esp-device"> 
-<form class="configure-esp-device" action="/config-device" method="post">
-	<h1>Postfach Konfigurieren</h1>
-	<input type="hidden" name="id" id="id">
+<dialog class="configure-esp-device">
+	<form class="configure-esp-device" action="/config-device" method="post">
+		<h1>Postfach Konfigurieren</h1>
+		<input type="hidden" name="id" id="id">
 
-	<div class="grid-container">
-	<label for="boxNumber">Fachnummer</label>
-	<input type="number" name="boxNumber" id="boxNumber" min="0" required>
-	<label for="checkInterval">Überprüfungsintervall</label>
-	<select name="checkInterval" id="checkInterval">
-	<% constants.checkIntervals.forEach((option) => { %>
-		<option value="<%=option.toLowerCase().replace('/ /g', '')%>"><%= option%></option>
-	<% })%>
-	</select>
-	<label for="to">An</label>
-	<input type="text" name="to" id="to" required>
-	<label for="subject">Titel</label>
-	<input type="text" name="subject" id="subject" required>
-	</div>
-	<textarea name="body" id="body" cols="30" rows="10" id="body" required></textarea>
+		<div class="grid-container">
+			<label for="boxNumber">Fachnummer</label>
+			<input type="number" name="boxNumber" id="boxNumber" min="0" required>
+			<label for="checkInterval">Überprüfungsintervall</label>
+			<select name="checkInterval" id="checkInterval">
+				<% constants.checkIntervals.forEach((option) => { %>
+				<option value="<%=option.toLowerCase().replace('/ /g', '')%>"><%= option%></option>
+				<% })%>
+			</select>
+			<label for="to">An</label>
+			<input type="text" name="to" id="to" required>
+			<label for="subject">Titel</label>
+			<input type="text" name="subject" id="subject" required>
+		</div>
+		<textarea name="body" id="body" cols="30" rows="10" id="body" required></textarea>
 
-	<input type="submit" value="Anwenden">
-	<input type="submit" id="cancel" name="cancel" value="Abbrechen" formnovalidate>
-	<input type="submit" id="delete" name="delete" value="Löschen" formnovalidate>
-</form>
+		<input type="submit" value="Anwenden">
+		<input type="submit" id="cancel" name="cancel" value="Abbrechen" formnovalidate>
+		<input type="submit" id="delete" name="delete" value="Löschen" formnovalidate>
+	</form>
 </dialog>
