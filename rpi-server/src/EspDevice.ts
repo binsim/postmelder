@@ -3,13 +3,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { MQTTService } from './mqttService';
 
 const CONFIG_FILE = 'data/esp-clients.json';
-export const CheckInterals = [
+export const CheckIntervals = [
 	'immediately',
 	'hourly',
 	'daily',
 	'weekly',
 ] as const;
-export type CheckInterval = (typeof CheckInterals)[number];
+export type CheckInterval = (typeof CheckIntervals)[number];
 
 interface JSON_Device {
 	id: string;
@@ -25,7 +25,7 @@ interface JSON_Device {
 export declare interface IDevice extends JSON_Device {
 	get isOnline(): boolean;
 	get isOccupied(): boolean;
-	get isCompletelyConfiguerd(): boolean;
+	get isCompletelyConfigured(): boolean;
 	get currentWeight(): number;
 	messageAlreadySent: boolean;
 
@@ -137,7 +137,7 @@ export class Device extends EventEmitter implements IDevice {
 	get isOccupied() {
 		return this.currentWeight > 0;
 	}
-	get isCompletelyConfiguerd() {
+	get isCompletelyConfigured() {
 		return (
 			!!this._device.boxNumber &&
 			Number(this._device.subscriber?.length) > 0

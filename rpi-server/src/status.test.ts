@@ -4,7 +4,7 @@ import { IStateService, StateService } from './status';
 describe('Status', () => {
 	const states: IStateService = new StateService();
 
-	test('Status ok nach start', () => {
+	test('Status ok after start', () => {
 		expect(states.isOk).toBe(true);
 	});
 	test('externalError', () => {
