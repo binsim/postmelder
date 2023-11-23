@@ -1,6 +1,7 @@
 import EventEmitter from 'node:events';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { MQTTService } from './mqttService';
+import { logger } from './logging';
 
 const CONFIG_FILE = 'data/esp-clients.json';
 export const CheckIntervals = [
@@ -70,23 +71,30 @@ export class Device extends EventEmitter implements IDevice {
 			case 'online':
 				this.isOnline = payload.toString() === 'online';
 				break;
-			// TODO: add getting new weight
 			case 'currentWeight':
 				const newWeight = Number(payload.toString());
 				const timeStamp = Date.now().valueOf();
 				if (newWeight <= 0) {
 					this.lastEmptied = timeStamp;
 					this.history.splice(0, this.history.length);
-					this.emit('occupiedChanged', false);
+					this.isOccupied = false;
 				} else {
 					this.history.push({ timeStamp, weight: newWeight });
-					if (this.history.length === 1)
-						this.emit('occupiedChanged', true);
+					if (this.history.length === 1) this.isOccupied = true;
+					else
+						logger.info(
+							`${this._device.id} weight changed to ${newWeight}`
+						);
 				}
 
 				saveToFile(MQTTService.Instance.devices);
 				break;
 			default:
+				logger.warn(
+					`${
+						this._device.id
+					} received unknown topic '${topic}' with payload '${payload.toString()}'`
+				);
 				break;
 		}
 	}
@@ -117,6 +125,9 @@ export class Device extends EventEmitter implements IDevice {
 	}
 	set boxNumber(value) {
 		this._device.boxNumber = value;
+		logger.info(
+			`${this._device.id} box number changed to ${this._device.boxNumber}`
+		);
 	}
 	get isOnline() {
 		return this._isOnline;
@@ -128,14 +139,30 @@ export class Device extends EventEmitter implements IDevice {
 		if (value === this._device.checkInterval) return;
 		this.emit('checkIntervalChanged', this._device.checkInterval, value);
 		this._device.checkInterval = value;
+		logger.info(
+			`${this._device.id} check interval changed to ${this._device.checkInterval}`
+		);
 	}
 	private set isOnline(value) {
 		if (value === this._isOnline) return;
 		this._isOnline = value;
 		this.emit('onlineChanged', this._isOnline);
+		logger.info(
+			`${this._device.id} state changed to ${
+				this._isOnline ? 'online' : 'offline'
+			}`
+		);
 	}
 	get isOccupied() {
 		return this.currentWeight > 0;
+	}
+	private set isOccupied(value) {
+		this.emit('occupiedChanged', value);
+		logger.info(
+			`${this._device.id} occupied changed to ${
+				value ? 'occupied' : 'free'
+			}`
+		);
 	}
 	get isCompletelyConfigured() {
 		return (
@@ -154,6 +181,8 @@ export class Device extends EventEmitter implements IDevice {
 	private set lastEmptied(value) {
 		this._device.lastEmptied = value;
 		// TODO: Emit event
+
+		logger.info(`${this._device.id} has been emptied`);
 	}
 	get history() {
 		return this._device.history;
@@ -176,14 +205,19 @@ export function loadFromFile(): IDevice[] {
 			devices.push(new Device(device));
 		});
 
+		logger.info(`${devices.length} esp-devices read from file`);
+
 		return devices;
 	} catch (error) {
 		let err = error as Error;
 		if (err.message.includes('no such file or directory, open')) {
 			// File doesn't exist
+			logger.info(
+				'exp-clients.json file does not exist, use empty array'
+			);
 			return [];
 		}
-		console.error(err.message);
+		logger.error(err.message);
 		return [];
 	}
 }
@@ -196,6 +230,6 @@ export function saveToFile(devices: IDevice[]): void {
 		}
 		writeFileSync(CONFIG_FILE, JSON.stringify(devices as JSON_Device[]));
 	} catch (error) {
-		console.error(error);
+		logger.error(error);
 	}
 }
