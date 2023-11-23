@@ -1,5 +1,6 @@
 import { init, open, write, OUTPUT, LOW, HIGH } from 'rpio';
 import { IDevice } from './EspDevice';
+import { logger } from './logging';
 
 export interface IStateService {
 	get externalError(): boolean;
@@ -18,6 +19,7 @@ export class StateService implements IStateService {
 	private _externalError = false;
 
 	constructor() {
+		// TODO: Log warnings of this function
 		init({ close_on_exit: true, mapping: 'gpio' });
 
 		// Define Pins as output
@@ -61,5 +63,6 @@ export class StateService implements IStateService {
 		write(this.r_pin, this.externalError ? HIGH : LOW);
 		write(this.g_pin, this.isOk ? HIGH : LOW);
 		write(this.b_pin, this.internalError ? HIGH : LOW);
+		logger.info('Updated state colors');
 	}
 }
