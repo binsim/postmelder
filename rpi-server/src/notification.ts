@@ -95,7 +95,9 @@ export class NotificationService {
 	addDevice(device: IDevice) {
 		const changeHandler = (status: boolean) => {
 			if (status && !device.messageAlreadySent) {
-				this.sendMessage(device);
+				this.sendMessage(device).catch((err) => {
+					logger.error(err);
+				});
 			}
 		};
 		const addDeviceToArr = (interval: CheckInterval | undefined) => {
@@ -103,7 +105,9 @@ export class NotificationService {
 			switch (interval) {
 				case 'immediately':
 					if (device.isOccupied && !device.messageAlreadySent)
-						this.sendMessage(device);
+						this.sendMessage(device).catch((err) => {
+							logger.error(err);
+						});
 
 					device.on('onlineChanged', changeHandler);
 					break;
@@ -229,7 +233,9 @@ export class NotificationService {
 	private checkForSendingMessage(devices: IDevice[]) {
 		devices.forEach((device) => {
 			if (device.isOccupied && !device.messageAlreadySent) {
-				this.sendMessage(device);
+				this.sendMessage(device).catch((err) => {
+					logger.error(err);
+				});
 			}
 		});
 	}
