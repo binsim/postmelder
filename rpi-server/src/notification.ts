@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { scheduleJob } from 'node-schedule';
 import { CheckInterval, IDevice } from './EspDevice';
+import { decrypt, encrypt } from './encrypt';
 import { logger } from './logging';
 
 export const DEFAULT_SMTP_PORT = 587;
@@ -10,7 +11,7 @@ const CONFIG_FILE = 'data/mail.json';
 
 interface INotificationConfig {
 	username: string;
-	password: string;
+	password: { iv: string; data: string; authTag: string };
 	host: string;
 	port?: number;
 	secure: boolean;
@@ -225,6 +226,13 @@ export class NotificationService {
 					{ recursive: true }
 				);
 			}
+
+			config.password = encrypt(
+				config.password.data,
+				config.password.iv !== undefined
+					? config.password.iv
+					: undefined
+			);
 			writeFileSync(CONFIG_FILE, JSON.stringify({ transporter: config }));
 			logger.info('Successfully update NotificationService config');
 		}
@@ -246,7 +254,7 @@ export class NotificationService {
 			port: config.port ?? DEFAULT_SMTP_PORT,
 			auth: {
 				user: config.username,
-				pass: config.password,
+				pass: decrypt(config.password),
 			},
 		};
 

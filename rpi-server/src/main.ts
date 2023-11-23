@@ -4,6 +4,7 @@ import { MQTTService } from './mqttService';
 import { StateService, IStateService } from './status';
 import { DEFAULT_SMTP_PORT, NotificationService } from './notification';
 import { CheckIntervals, IDevice } from './EspDevice';
+import { encrypt } from './encrypt';
 import { logger } from './logging';
 
 //#region Setup
@@ -117,6 +118,13 @@ app.post('/notServiceConf', async (req, res) => {
 		if (!req.body.password) {
 			req.body.password = NotificationService.Instance.Config?.password;
 		}
+	} else {
+		if (!req.body.password) {
+			res.status(400).send(
+				'No password given, please add a password for current user'
+			);
+		}
+		req.body.password = encrypt(req.body.password);
 	}
 	req.body.port = req.body.port ? Number(req.body.port) : DEFAULT_SMTP_PORT;
 	req.body.ssl = req.body.ssl === 'on';
