@@ -3,13 +3,15 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { scheduleJob } from 'node-schedule';
 import { CheckInterval, IDevice } from './EspDevice';
+import { decrypt, encrypt } from './encrypt';
+import { logger } from './logging';
 
 export const DEFAULT_SMTP_PORT = 587;
 const CONFIG_FILE = 'data/mail.json';
 
 interface INotificationConfig {
 	username: string;
-	password: string;
+	password: { iv: string; data: string; authTag: string };
 	host: string;
 	port?: number;
 	secure: boolean;
@@ -33,28 +35,29 @@ export class NotificationService {
 				throw new Error("mail.json has no attribute 'transporter'");
 
 			this.updateConfig(data['transporter'], false);
+			logger.info('Read notification settings from file');
 		} catch (error) {
 			let err = error as Error;
-			if (err.message.includes('no such file or directory, open')) {
+			if (err.message.includes('no such file or directory, open'))
 				// Transporter stays undefined, can be configured later
-				console.info(
+				logger.info(
 					"Notification not configured, can't send messages to client"
 				);
-				return;
-			}
-			console.error(error);
-			return;
+			else logger.error(error);
 		}
 
-		scheduleJob('0 * * * *', () =>
-			this.checkForSendingMessage(this._hourlyDevices)
-		);
-		scheduleJob('0 0 * * *', () =>
-			this.checkForSendingMessage(this._dailyDevices)
-		);
-		scheduleJob('0 0 * * 1', () =>
-			this.checkForSendingMessage(this._weeklyDevices)
-		);
+		scheduleJob('0 * * * *', () => {
+			logger.info('HOURLY CHECK TRIGGERED');
+			this.checkForSendingMessage(this._hourlyDevices);
+		});
+		scheduleJob('0 0 * * *', () => {
+			logger.info('DAILY CHECK TRIGGERED');
+			this.checkForSendingMessage(this._dailyDevices);
+		});
+		scheduleJob('0 0 * * 1', () => {
+			logger.info('WEEKLY CHECK TRIGGERED');
+			this.checkForSendingMessage(this._weeklyDevices);
+		});
 	}
 
 	static get Instance() {
@@ -93,7 +96,9 @@ export class NotificationService {
 	addDevice(device: IDevice) {
 		const changeHandler = (status: boolean) => {
 			if (status && !device.messageAlreadySent) {
-				this.sendMessage(device);
+				this.sendMessage(device).catch((err) => {
+					logger.error(err);
+				});
 			}
 		};
 		const addDeviceToArr = (interval: CheckInterval | undefined) => {
@@ -101,7 +106,9 @@ export class NotificationService {
 			switch (interval) {
 				case 'immediately':
 					if (device.isOccupied && !device.messageAlreadySent)
-						this.sendMessage(device);
+						this.sendMessage(device).catch((err) => {
+							logger.error(err);
+						});
 
 					device.on('onlineChanged', changeHandler);
 					break;
@@ -154,7 +161,7 @@ export class NotificationService {
 	): Promise<MailReturn> {
 		return new Promise(async (resolve, reject) => {
 			if (device.subscriber!.length <= 0) {
-				reject(new Error('No target for message proviede'));
+				reject(new Error('No target for message provided'));
 				return;
 			}
 			if (
@@ -185,6 +192,25 @@ export class NotificationService {
 						device
 					),
 				});
+
+				if (info.rejected.length > 0) {
+					logger.warn(
+						`${
+							device.id
+						} send a message with rejected recipients [${info.rejected.join(
+							', '
+						)}]`
+					);
+				}
+				if (info.accepted.length > 0) {
+					logger.info(
+						`${
+							device.id
+						} send a message successfully to [${info.accepted.join(
+							', '
+						)}]`
+					);
+				}
 				resolve(info);
 			} catch (err) {
 				//TODO: Make Error more readable
@@ -207,7 +233,15 @@ export class NotificationService {
 					{ recursive: true }
 				);
 			}
+
+			config.password = encrypt(
+				config.password.data,
+				config.password.iv !== undefined
+					? config.password.iv
+					: undefined
+			);
 			writeFileSync(CONFIG_FILE, JSON.stringify({ transporter: config }));
+			logger.info('Successfully update NotificationService config');
 		}
 	}
 
@@ -226,7 +260,9 @@ export class NotificationService {
 	private checkForSendingMessage(devices: IDevice[]) {
 		devices.forEach((device) => {
 			if (device.isOccupied && !device.messageAlreadySent) {
-				this.sendMessage(device);
+				this.sendMessage(device).catch((err) => {
+					logger.error(err);
+				});
 			}
 		});
 	}
@@ -237,7 +273,7 @@ export class NotificationService {
 			port: config.port ?? DEFAULT_SMTP_PORT,
 			auth: {
 				user: config.username,
-				pass: config.password,
+				pass: decrypt(config.password),
 			},
 		};
 

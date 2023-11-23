@@ -8,6 +8,9 @@ const notification_password_element =
 const notification_port_checkbox =
 	notification_conf_dialog.querySelector('#port-enabled');
 const notification_port_input = notification_conf_dialog.querySelector('#port');
+const notification_conf_dialog_show_button = document.querySelector(
+	'#show-notification-service-conf-dialog'
+);
 
 const configure_esp_device_dialog = document.querySelector(
 	'dialog.configure-esp-device'
@@ -33,6 +36,9 @@ testmessage_response_dialog_close_btn.addEventListener('click', (e) => {
 notification_username_element.addEventListener('change', () => {
 	notification_password_element.disabled = false;
 });
+notification_conf_dialog_show_button.addEventListener('click', () => {
+	notification_conf_dialog.showModal();
+});
 
 notification_port_input.disabled = !notification_port_checkbox.checked;
 notification_port_checkbox.addEventListener('change', () => {
@@ -46,9 +52,9 @@ notification_port_checkbox.addEventListener('change', () => {
 function configureDevice(device) {
 	// Getting all elements
 	const id = configure_esp_device_dialog.querySelector('#id');
-	const boxNumber = configure_esp_device_dialog.querySelector('#boxnumber');
+	const boxNumber = configure_esp_device_dialog.querySelector('#boxNumber');
 	const checkInterval =
-		configure_esp_device_dialog.querySelector('#checkinterval');
+		configure_esp_device_dialog.querySelector('#checkInterval');
 	const to = configure_esp_device_dialog.querySelector('#to');
 	const subject = configure_esp_device_dialog.querySelector('#subject');
 	const body = configure_esp_device_dialog.querySelector('#body');
@@ -95,10 +101,6 @@ async function testMessage(e, deviceId) {
 			rejected_destinations_ul.appendChild(i);
 		});
 	}
-}
-
-function shoNotificationServiceConfDialog() {
-	notification_conf_dialog.showModal();
 }
 
 const history_h2_default_text = undefined;
