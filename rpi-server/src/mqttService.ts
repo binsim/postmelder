@@ -1,6 +1,7 @@
 import { MqttClient, connect } from 'mqtt';
 import { Device, IDevice, loadFromFile, saveToFile } from './EspDevice';
 import EventEmitter from 'node:events';
+import { logger } from './logging';
 
 export declare interface IMQTTService {
 	get devices(): IDevice[];
@@ -49,6 +50,11 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 
 		this._isConnected = value;
 		this.emit('connectionChanged', this._isConnected);
+		if (this._isConnected) {
+			logger.info('MQTT connection successfully established');
+		} else {
+			logger.warn('MQTT connection lost');
+		}
 	}
 
 	connect() {
@@ -65,12 +71,14 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 		this._client.on('error', (err: Error) => {
 			this.isConnected = false;
 			// TODO: Handle Error
+			logger.error(`MQTT Client error: ${err.message}`);
 		});
 		this._client.on('connect', () => {
+			this.isConnected = true;
 			// Subscribe to get all devices
 			this.client.subscribe('/devices');
+			logger.info(`Subscribing to '/devices'`);
 
-			this.isConnected = true;
 			this.client.publish('/server/online', Buffer.from('true'), {
 				retain: true,
 			});
@@ -92,8 +100,12 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 
 		// TODO: Check if item should be added or throw an error if it does not exist
 		if (index < 0) {
+			logger.error(
+				`${device.id} not found, it will be added automatically`
+			);
 			this._devices.push(device);
 		} else {
+			logger.info(`Successfully updated ${device.id}`);
 			this._devices[index] = device;
 		}
 
@@ -101,23 +113,25 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 	}
 
 	private onMessageArrived(topic: string, payload: Buffer) {
+		// Connecting new device
 		if (topic === '/devices') {
 			const id = payload.toString();
 
 			// Subscribe to all topics for this device
 			this.client.subscribe(`/${id}/#`);
+			logger.info(`Subscribing to '/${id}/#`);
 
 			if (!this.getDeviceByID(id)) {
-				this._devices.push(
-					// Create new device with no information
-					new Device({
-						id,
-						subscriber: [],
-						history: [],
-					})
-				);
+				// Create new device with no information
+				const device = new Device({
+					id,
+					subscriber: [],
+					history: [],
+				});
 
-				this.emit('deviceAdded', this._devices.at(-1) as IDevice);
+				this._devices.push(device);
+				this.emit('deviceAdded', device);
+				logger.info(`MQTTService found new device: ${device.id}`);
 
 				// Write to file after not adding a new device for 15 secs
 				if (this._deviceSaveToFileTimeout)
@@ -129,16 +143,19 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 
 			// Respond to client to let it know it has been registered
 			this.client.publish(`/${id}`, '');
+			logger.info(`Publish -t '/${id}' -m ''`);
 			return;
 		}
-
+		// Get device
 		const firstTopic = topic.split('/')[1];
 		const device = this.getDeviceByID(firstTopic);
 
 		if (device) {
 			(device as Device)._onMessageArrived(topic, payload);
-		} else {
-			console.error(`Topic '${topic}' is not yet implemented`);
+			return;
 		}
+
+		// Topic is not for an existing device
+		logger.error(`Topic '${topic}' is not yet implemented`);
 	}
 }

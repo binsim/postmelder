@@ -1,10 +1,15 @@
 import express, { Express, Request, Response } from 'express';
 import { config } from 'dotenv';
-import { IMQTTService, MQTTService } from './mqttService';
+import { MQTTService } from './mqttService';
 import { StateService, IStateService } from './status';
 import { DEFAULT_SMTP_PORT, NotificationService } from './notification';
 import { CheckIntervals, IDevice } from './EspDevice';
 import { encrypt } from './encrypt';
+import { logger } from './logging';
+
+logger.info(
+	'#################################################  Starting   ###########################################################'
+);
 
 //#region Setup
 // Important for using .env variables
@@ -66,7 +71,6 @@ app.get('/', (req: Request, res: Response) => {
 	});
 });
 app.get('/testMessage', async (req, res) => {
-	console.log({ query: req.query });
 	if (typeof req.query.id !== 'string') {
 		res.status(400).send('ID is not a string');
 		return;
@@ -77,9 +81,18 @@ app.get('/testMessage', async (req, res) => {
 		return;
 	}
 
-	const response = await NotificationService.Instance.sendTestMessage(device);
-	console.log(response);
-	res.status(200).json(response);
+	try {
+		const response = await NotificationService.Instance.sendTestMessage(
+			device
+		);
+		res.status(200).json(response);
+	} catch (error) {
+		logger.error(error);
+		res.sendStatus(400).send(
+			'Error while sending test message, please check log file'
+		);
+		return;
+	}
 });
 app.get('/boxDetails', (req, res) => {
 	if (req.query.id === undefined) {
@@ -92,8 +105,6 @@ app.get('/boxDetails', (req, res) => {
 		res.sendStatus(404);
 		return;
 	}
-
-	console.log(device);
 
 	res.status(200).json({
 		lastEmptied: device.lastEmptied,
@@ -127,19 +138,22 @@ app.post('/notServiceConf', async (req, res) => {
 	if (!isValid) {
 		// TODO: Send more information
 		res.status(422).send('Connection to given SMTP Server not possible');
+		logger.warn(
+			'Newly added notification configuration not valid, will not update'
+		);
 		return;
 	}
 
 	try {
 		NotificationService.Instance.updateConfig(req.body);
 		res.redirect('/');
+	} catch (error) {
+		logger.error(error);
+		res.status(400).send(
+			'Error while updating config, please check log file'
+		);
 		return;
-	} catch (error) {}
-
-	// TODO: Update Status
-	res.sendStatus(501);
-
-	console.log({ body: req.body });
+	}
 });
 app.post('/config-device', (req, res) => {
 	if (req.body.cancel !== undefined) {
@@ -152,6 +166,9 @@ app.post('/config-device', (req, res) => {
 	if (device === undefined) {
 		// Unexpected can't add new device from web
 		res.sendStatus(500);
+		logger.warn(
+			`Can't configure device(${req.body.id}) because it has not been discoverd yet`
+		);
 		return;
 	}
 
@@ -163,6 +180,10 @@ app.post('/config-device', (req, res) => {
 		device.checkInterval = undefined;
 		device.lastEmptied = undefined;
 		device.history = [];
+
+		logger.info(
+			`device(${req.body.id}) as been deleted using the web interface`
+		);
 	} else {
 		req.body.boxNumber = Number(req.body.boxNumber);
 		if (isNaN(req.body.boxNumber)) {
@@ -189,5 +210,5 @@ app.post('/config-device', (req, res) => {
 //#endregion API
 
 app.listen(PORT, () => {
-	console.log(`Server is running at http://localhost:${PORT}`);
+	logger.info(`Server is running at http://localhost:${PORT}`);
 });
