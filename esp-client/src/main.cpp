@@ -13,6 +13,9 @@ PubSubClient client(wiFiClient);
 
 void callback(char* topic, byte* message, unsigned int length);
 void reconnect();
+const String MAC = WiFi.macAddress();
+bool connectedWithNode = false;
+
 
 void setup() 
 {
@@ -38,22 +41,47 @@ void loop()
 	{
 		reconnect();
 	}
+	client.loop();
 }
 void callback(char* topic, byte* message, unsigned int length)
 {
+  	String messageTemp;
+	String topicStr(topic);
 
+	Serial.print("Message arrived on topic: '");
+  	Serial.print(topic);
+  	Serial.print("' Message: '");
+  
+  	for (int i = 0; i < length; i++) {
+    	Serial.print((char)message[i]);
+    	messageTemp += (char)message[i];
+  	}
+  	Serial.println("'");
+
+	if (topicStr == ("/" + MAC))
+	{
+		// TODO: Handle case
+	}
+	else if(topicStr == "/server/online")
+	{
+		// TODO: Let user know
+		if (messageTemp != "connected" && messageTemp != "disconnected") 
+			return;
+		connectedWithNode = messageTemp == "connected";
+	}
 }
 void reconnect() 
 {
-	static String mac = WiFi.macAddress();
 
 	if (client.connected()) return;
 	
 	// TODO: Get MAC Address as ID
-	if (client.connect(mac.c_str(), MQTTUSER, MQTTPASS)) {
-		client.publish("/devices", mac.c_str());
-		client.subscribe(("/" + mac).c_str());
+	if (client.connect(MAC.c_str(), MQTTUSER, MQTTPASS)) {
+		client.subscribe(("/" + MAC + "/#").c_str());
 		client.subscribe("/server/online");
+
+		// Sending device now available
+		client.publish("/devices", MAC.c_str());
 	} 
 	else
 	{
