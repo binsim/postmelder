@@ -76,12 +76,13 @@ void reconnect()
 	if (client.connected()) return;
 	
 	// TODO: Get MAC Address as ID
-	if (client.connect(MAC.c_str(), MQTTUSER, MQTTPASS)) {
+	if (client.connect(MAC.c_str(), MQTTUSER, MQTTPASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected")) {
 		client.subscribe(("/" + MAC + "/#").c_str());
 		client.subscribe("/server/online");
 
 		// Sending device now available
 		client.publish("/devices", MAC.c_str());
+		client.publish(("/" + MAC + "/online").c_str(), "connected", true);
 	} 
 	else
 	{
