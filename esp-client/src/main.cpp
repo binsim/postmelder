@@ -13,6 +13,7 @@ PubSubClient client(wiFiClient);
 
 void callback(char* topic, byte* message, unsigned int length);
 void reconnect();
+void sendweight(float weight);
 const String MAC = WiFi.macAddress();
 bool connectedWithNode = false;
 
@@ -91,4 +92,9 @@ void reconnect()
 		delay(1000);
 	}
 
+}
+void sendweight(float weight)
+{
+	if(!client.connected()) return;
+	client.publish(("/" + MAC + "/currentWeight").c_str(), String(weight, 1).c_str());
 }
