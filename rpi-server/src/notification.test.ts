@@ -20,9 +20,9 @@ describe('NotificationService', () => {
 
 		expect(
 			(NotificationService as any).insertVariables(text, {
-				currentWeight: 10,
+				currentWeight: 10.1,
 			})
-		).toBe('The weight of the box has changed to 10g');
+		).toBe('The weight of the box has changed to 10,1g');
 	});
 	test('Replace lastEmptied', () => {
 		let text = 'Box hast been emptied last at {LASTEMPTIED}';
@@ -43,14 +43,16 @@ describe('NotificationService', () => {
 		expect(
 			(NotificationService as any).insertVariables(text, {
 				history: [
-					{ timeStamp: time, weight: 10 },
-					{ timeStamp: time, weight: 20 },
+					{ timeStamp: time, weight: 10.1 },
+					{ timeStamp: time, weight: 20.5 },
 				],
 			})
 		).toBe(
 			`Box fill history:\n\n${new Date(
 				time
-			).toLocaleString()}: 10g\n${new Date(time).toLocaleString()}: 20g\n`
+			).toLocaleString()}: 10,1g\n${new Date(
+				time
+			).toLocaleString()}: 20,5g\n`
 		);
 	});
 });
