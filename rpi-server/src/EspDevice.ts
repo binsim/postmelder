@@ -12,6 +12,8 @@ export const CheckIntervals = [
 ] as const;
 export type CheckInterval = (typeof CheckIntervals)[number];
 
+export type HistoryType = { timeStamp: number; weight: number };
+
 interface JSON_Device {
 	id: string;
 	subscriber: string[];
@@ -20,7 +22,7 @@ interface JSON_Device {
 	boxNumber?: number;
 	checkInterval?: CheckInterval;
 	lastEmptied?: number;
-	history: { timeStamp: number; weight: number }[];
+	history: HistoryType[];
 }
 
 export declare interface IDevice extends JSON_Device {

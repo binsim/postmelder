@@ -2,7 +2,7 @@ import { Transporter, createTransport } from 'nodemailer';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { scheduleJob } from 'node-schedule';
-import { CheckInterval, IDevice } from './EspDevice';
+import { CheckInterval, HistoryType, IDevice } from './EspDevice';
 import { decrypt, encrypt } from './encrypt';
 import { logger } from './logging';
 
@@ -250,6 +250,18 @@ export class NotificationService {
 		device: IDevice
 	): string | undefined {
 		if (msg === undefined) return undefined;
+
+		function getHistory(history: HistoryType[]): string {
+			let HistoryString = '\n';
+			history?.forEach((el) => {
+				HistoryString +=
+					new Date(el.timeStamp).toLocaleString() +
+					': ' +
+					el.weight.toLocaleString() +
+					'g\n';
+			});
+			return HistoryString;
+		}
 		return msg
 			.replace(
 				new RegExp('{BOXNR}', 'g'),
@@ -265,25 +277,7 @@ export class NotificationService {
 					? new Date(device.lastEmptied).toLocaleString()
 					: '{LASTEMPTIED:undefined}'
 			)
-			.replace(
-				new RegExp('{HISTORY}', 'g'),
-				this.getHistory(device.history)
-			);
-	}
-
-	private static getHistory(
-		history: { timeStamp: number; weight: number }[] | undefined
-	): string {
-		let HistoryString: string;
-		HistoryString = '\n';
-		history?.forEach((el) => {
-			HistoryString +=
-				new Date(el.timeStamp).toLocaleString() +
-				': ' +
-				el.weight.toLocaleString() +
-				'g\n';
-		});
-		return HistoryString;
+			.replace(new RegExp('{HISTORY}', 'g'), getHistory(device.history));
 	}
 
 	private checkForSendingMessage(devices: IDevice[]) {
