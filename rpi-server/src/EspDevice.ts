@@ -69,7 +69,22 @@ export class Device extends EventEmitter implements IDevice {
 
 		switch (topic.split('/').at(-1)) {
 			case 'online':
-				this.isOnline = payload.toString() === 'online';
+				switch (payload.toString()) {
+					case 'online':
+						this.isOnline = true;
+						break;
+					case 'offline':
+						this.isOnline = false;
+						break;
+					default:
+						this.isOnline = false;
+						logger.warn(
+							`${
+								this._device.id
+							} received unknown payload(${payload.toString()}) for online topic`
+						);
+						break;
+				}
 				break;
 			case 'currentWeight':
 				const newWeight = Number(payload.toString());

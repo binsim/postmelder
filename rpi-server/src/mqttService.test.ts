@@ -2,6 +2,7 @@ import { test, describe, expect } from '@jest/globals';
 import { MQTTService } from './mqttService';
 import { MqttClient } from 'mqtt/*';
 import { IDevice, saveToFile } from './EspDevice';
+import { logger } from './logging';
 
 jest.useFakeTimers();
 
@@ -69,6 +70,7 @@ describe('MQTTService', () => {
 		);
 
 		let isOnline = true;
+		logger.warn = jest.fn();
 
 		device?.on('onlineChanged', (value) => (isOnline = value));
 		(MQTTService.Instance as any).onMessageArrived(
@@ -78,6 +80,7 @@ describe('MQTTService', () => {
 
 		expect(isOnline).toBe(false);
 		expect(device?.isOnline).toBe(false);
+		expect(logger.warn).toBeCalled();
 	});
 
 	test('Object added to office box', () => {
