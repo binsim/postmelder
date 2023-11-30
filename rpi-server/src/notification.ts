@@ -2,7 +2,7 @@ import { Transporter, createTransport } from 'nodemailer';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { scheduleJob } from 'node-schedule';
-import { CheckInterval, IDevice } from './EspDevice';
+import { CheckInterval, HistoryType, IDevice } from './EspDevice';
 import { decrypt, encrypt } from './encrypt';
 import { logger } from './logging';
 
@@ -181,10 +181,16 @@ export class NotificationService {
 				const info: MailReturn = await this.transporter!.sendMail({
 					from: this.conf.username,
 					to: device.subscriber!.join(', '),
-					subject: isTestMessage
-						? `Test: ${device.notificationTitle}`
-						: device.notificationTitle,
-					text: device.notificationBody,
+					subject: NotificationService.insertVariables(
+						isTestMessage
+							? `Test: ${device.notificationTitle}`
+							: device.notificationTitle,
+						device
+					),
+					text: NotificationService.insertVariables(
+						device.notificationBody,
+						device
+					),
 				});
 
 				if (info.rejected.length > 0) {
@@ -214,6 +220,7 @@ export class NotificationService {
 			if (!isTestMessage) device.messageAlreadySent = true;
 		});
 	}
+
 	updateConfig(config: INotificationConfig, writeToFile = true) {
 		this.transporter = createTransport(
 			NotificationService.getOptionsFromConfig(config)
@@ -236,6 +243,41 @@ export class NotificationService {
 			writeFileSync(CONFIG_FILE, JSON.stringify({ transporter: config }));
 			logger.info('Successfully update NotificationService config');
 		}
+	}
+
+	private static insertVariables(
+		msg: string | undefined,
+		device: IDevice
+	): string | undefined {
+		if (msg === undefined) return undefined;
+
+		function getHistory(history: HistoryType[]): string {
+			let HistoryString = '\n';
+			history?.forEach((el) => {
+				HistoryString +=
+					new Date(el.timeStamp).toLocaleString() +
+					': ' +
+					el.weight.toLocaleString() +
+					'g\n';
+			});
+			return HistoryString;
+		}
+		return msg
+			.replace(
+				new RegExp('{BOXNR}', 'g'),
+				device.boxNumber?.toString() ?? '{BOXNR:undefined}'
+			)
+			.replace(
+				new RegExp('{WEIGHT}', 'g'),
+				device.currentWeight?.toLocaleString() + 'g'
+			)
+			.replace(
+				new RegExp('{LASTEMPTIED}', 'g'),
+				device.lastEmptied
+					? new Date(device.lastEmptied).toLocaleString()
+					: '{LASTEMPTIED:undefined}'
+			)
+			.replace(new RegExp('{HISTORY}', 'g'), getHistory(device.history));
 	}
 
 	private checkForSendingMessage(devices: IDevice[]) {

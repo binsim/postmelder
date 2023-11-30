@@ -2,6 +2,7 @@ import { test, describe, expect } from '@jest/globals';
 import { IStateService, StateService } from './status';
 
 describe('Status', () => {
+	jest.spyOn(console, 'error').mockImplementation(() => {});
 	const states: IStateService = new StateService();
 
 	test('Status ok after start', () => {
