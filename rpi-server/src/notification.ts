@@ -250,11 +250,14 @@ export class NotificationService {
 		device: IDevice
 	): string | undefined {
 		if (msg === undefined) return undefined;
-
 		return msg.replace(
 			new RegExp('{BOXNR}', 'g'),
 			device.boxNumber?.toString() ?? '{BOXNR:undefined}'
+		).replace(
+			new RegExp('{WEIGHT}', 'g'), 
+			device.currentWeight?.toLocaleString()+'g'
 		);
+			
 	}
 
 	private checkForSendingMessage(devices: IDevice[]) {
