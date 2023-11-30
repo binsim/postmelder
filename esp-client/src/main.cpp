@@ -13,9 +13,10 @@ PubSubClient client(wiFiClient);
 
 void callback(char* topic, byte* message, unsigned int length);
 void reconnect();
-void sendweight(float weight);
+void sendWeight(float weight);
 const String MAC = WiFi.macAddress();
 bool connectedWithNode = false;
+bool isServerOnline = false;
 
 
 void setup() 
@@ -62,13 +63,14 @@ void callback(char* topic, byte* message, unsigned int length)
 	if (topicStr == ("/" + MAC))
 	{
 		// TODO: Handle case
+		connectedWithNode = true;
 	}
 	else if(topicStr == "/server/online")
 	{
 		// TODO: Let user know
 		if (messageTemp != "connected" && messageTemp != "disconnected") 
 			return;
-		connectedWithNode = messageTemp == "connected";
+		isServerOnline = messageTemp == "connected";
 	}
 }
 void reconnect() 
@@ -93,8 +95,7 @@ void reconnect()
 	}
 
 }
-void sendweight(float weight)
+void sendWeight(float weight)
 {
-	if(!client.connected()) return;
-	client.publish(("/" + MAC + "/currentWeight").c_str(), String(weight, 1).c_str());
+	client.publish(("/" + MAC + "/currentWeight").c_str(), String(weight, 1).c_str(),true);
 }
