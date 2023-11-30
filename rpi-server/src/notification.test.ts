@@ -22,7 +22,9 @@ describe('NotificationService', () => {
 			(NotificationService as any).insertVariables(text, {
 				currentWeight: 10.1,
 			})
-		).toBe('The weight of the box has changed to 10,1g');
+		).toBe(
+			`The weight of the box has changed to ${(10.1).toLocaleString()}g`
+		);
 	});
 	test('Replace lastEmptied', () => {
 		let text = 'Box hast been emptied last at {LASTEMPTIED}';
@@ -50,9 +52,9 @@ describe('NotificationService', () => {
 		).toBe(
 			`Box fill history:\n\n${new Date(
 				time
-			).toLocaleString()}: 10,1g\n${new Date(
+			).toLocaleString()}: ${(10.1).toLocaleString()}g\n${new Date(
 				time
-			).toLocaleString()}: 20,5g\n`
+			).toLocaleString()}: ${(20.5).toLocaleString()}g\n`
 		);
 	});
 });
