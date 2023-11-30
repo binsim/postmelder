@@ -1,13 +1,27 @@
 {
-    "files.associations": {
-        "*.tcc": "cpp",
-        "optional": "cpp",
-        "functional": "cpp",
-        "random": "cpp",
-        "fstream": "cpp",
-        "istream": "cpp",
-        "ostream": "cpp",
-        "sstream": "cpp",
-        "streambuf": "cpp"
-    }
+	"files.associations": {
+		"*.tcc": "cpp",
+		"optional": "cpp",
+		"functional": "cpp",
+		"random": "cpp",
+		"fstream": "cpp",
+		"istream": "cpp",
+		"ostream": "cpp",
+		"sstream": "cpp",
+		"streambuf": "cpp"
+	},
+	"files.exclude": {
+		"**/.git": true,
+		"**/.svn": true,
+		"**/.hg": true,
+		"**/CVS": true,
+		"**/.DS_Store": true,
+		"**/Thumbs.db": true,
+		"**/.classpath": true,
+		"**/.project": true,
+		"**/.settings": true,
+		"**/.factorypath": true,
+		".pio": true
+	},
+	"explorerExclude.backup": {}
 }
