@@ -63,7 +63,7 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 			password: process.env.MQTT_PASSWORD,
 			will: {
 				topic: '/server/online',
-				payload: Buffer.from('false'),
+				payload: Buffer.from('disconnected'),
 				retain: true,
 			},
 		});
@@ -79,7 +79,7 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 			this.client.subscribe('/devices');
 			logger.info(`Subscribing to '/devices'`);
 
-			this.client.publish('/server/online', Buffer.from('true'), {
+			this.client.publish('/server/online', Buffer.from('connected'), {
 				retain: true,
 			});
 		});
