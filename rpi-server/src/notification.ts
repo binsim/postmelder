@@ -264,7 +264,26 @@ export class NotificationService {
 				device.lastEmptied
 					? new Date(device.lastEmptied).toLocaleString()
 					: '{LASTEMPTIED:undefined}'
+			)
+			.replace(
+				new RegExp('{HISTORY}', 'g'),
+				this.getHistory(device.history)
 			);
+	}
+
+	private static getHistory(
+		history: { timeStamp: number; weight: number }[] | undefined
+	): string {
+		let HistoryString: string;
+		HistoryString = '\n';
+		history?.forEach((el) => {
+			HistoryString +=
+				new Date(el.timeStamp).toLocaleString() +
+				': ' +
+				el.weight.toLocaleString() +
+				'g\n';
+		});
+		return HistoryString;
 	}
 
 	private checkForSendingMessage(devices: IDevice[]) {
