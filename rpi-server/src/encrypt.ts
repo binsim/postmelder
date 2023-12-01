@@ -36,7 +36,6 @@ export function encrypt(
 	};
 }
 export function decrypt(hash: HashData): string {
-	console.log(hash);
 	const decipher = createDecipheriv(
 		'aes-256-gcm',
 		getKey(),
@@ -44,10 +43,8 @@ export function decrypt(hash: HashData): string {
 	);
 	decipher.setAuthTag(Buffer.from(hash.authTag, 'hex'));
 
-	const data =
+	return (
 		decipher.update(Buffer.from(hash.data, 'hex')).toString() +
-		decipher.final('utf-8');
-	console.log(data);
-
-	return data;
+		decipher.final('utf-8')
+	);
 }
