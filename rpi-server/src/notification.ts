@@ -74,10 +74,14 @@ export class NotificationService {
 		return new Promise((resolve, _) => {
 			if (this.transporter == undefined) {
 				resolve(false);
+				logger.warn('Transporter can not be connected if undefined');
 				return;
 			}
 
 			this.transporter.verify((err) => {
+				if (err) {
+					logger.warn(`Transporter is not connected due to ${err}`);
+				}
 				resolve(!err);
 			});
 		});
