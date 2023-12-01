@@ -5,14 +5,25 @@ import {
 	createHash,
 } from 'node:crypto';
 
-const key = createHash('sha256')
-	.update(process.env.KEY ?? '123456789')
-	.digest('base64')
-	.substring(0, 32);
+export type HashData = { iv: string; data: string; authTag: string };
 
-export function encrypt(text: string, iv: string | undefined = undefined) {
+function getKey() {
+	return createHash('sha256')
+		.update(process.env.KEY ?? '123456789')
+		.digest('base64')
+		.substring(0, 32);
+}
+
+export function encrypt(
+	text: string,
+	iv: string | undefined = undefined
+): HashData {
 	iv = iv ?? randomBytes(16).toString('hex');
-	const cipher = createCipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'));
+	const cipher = createCipheriv(
+		'aes-256-gcm',
+		getKey(),
+		Buffer.from(iv, 'hex')
+	);
 
 	let data = Buffer.concat([cipher.update(text), cipher.final()]).toString(
 		'hex'
@@ -24,16 +35,19 @@ export function encrypt(text: string, iv: string | undefined = undefined) {
 		authTag: cipher.getAuthTag().toString('hex'),
 	};
 }
-export function decrypt(hash: { iv: string; data: string; authTag: string }) {
+export function decrypt(hash: HashData): string {
+	console.log(hash);
 	const decipher = createDecipheriv(
 		'aes-256-gcm',
-		key,
+		getKey(),
 		Buffer.from(hash.iv, 'hex')
 	);
 	decipher.setAuthTag(Buffer.from(hash.authTag, 'hex'));
 
-	return (
-		decipher.update(Buffer.from(hash.data, 'hex')).toString('utf-8') +
-		decipher.final('utf-8')
-	);
+	const data =
+		decipher.update(Buffer.from(hash.data, 'hex')).toString() +
+		decipher.final('utf-8');
+	console.log(data);
+
+	return data;
 }
