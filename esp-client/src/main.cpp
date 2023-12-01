@@ -28,7 +28,7 @@ void sendWeight(float weight);
 void updateLEDs();
 void setStateOccupied(bool value);
 void setStateError(bool value);
-void setStateSetUP(bool value);
+void setStateInit(bool value);
 
 const String MAC = WiFi.macAddress();
 bool connectedWithNode = false;
@@ -67,7 +67,7 @@ void setup()
 
 	setStateOccupied(false);
 	setStateError(false);
-	setStateSetUP(true);
+	setStateInit(true);
 }
 
 void loop()
@@ -172,44 +172,15 @@ void updateLEDs()
 
 void setStateOccupied(bool value)
 {
-	static bool currentVal = false;
-
-	if (value == currentVal)
-		return;
-	currentVal = value;
-	digitalWrite(G_LED_PIN, value ? HIGH : LOW);
+	value ? state |= 1 << 1 : state &= ~(1 << 1);
 }
 
 void setStateError(bool value)
 {
-	static bool currentVal = false;
-
-	if (value == currentVal)
-		return;
-	currentVal = value;
-	if (value)
-	{
-		ledcWrite(CHANNEL_ROT, BLINKEN_EIN);
-	}
-	else
-	{
-		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
-	}
+	value ? state |= 1 << 7 : state &= ~(1 << 7);
 }
 
-void setStateSetUP(bool value)
+void setStateInit(bool value)
 {
-	static bool currentVal = false;
-
-	if (value == currentVal)
-		return;
-	currentVal = value;
-	if (value)
-	{
-		ledcWrite(CHANNEL_BLAU, BLINKEN_EIN);
-	}
-	else
-	{
-		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
-	}
+	value ? state |= 1 << 0 : state &= ~(1 << 0);
 }
