@@ -2,10 +2,22 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
+// ----------------------- MQTT-Server Settings ---------------------  //
 #define SSID "Postmelder-Wifi"
 IPAddress mqttServer(10, 42, 0, 1);
 #define MQTTUSER "MQTTBroker"
 #define MQTTPASS "postmelder"
+
+// ------------------------------- Pinout ----------------------------  //
+#define R_LED_PIN 2
+#define G_LED_PIN 3
+#define B_LED_PIN 4
+
+// ------------------------- PMW Blinking ------------------------------ //
+#define CHANNEL_BLAU 0
+#define CHANNEL_ROT 1
+#define BLINKEN_EIN 100
+#define BLINKEN_AUS 0
 
 WiFiClient wiFiClient;
 PubSubClient client(wiFiClient);
@@ -13,13 +25,34 @@ PubSubClient client(wiFiClient);
 void callback(char *topic, byte *message, unsigned int length);
 void reconnect();
 void sendWeight(float weight);
+void updateLEDs();
+
 const String MAC = WiFi.macAddress();
 bool connectedWithNode = false;
 bool isServerOnline = false;
 
+/*
+	Bits: 		Func
+	0	:		INIT
+	1	:		OCCUPIED
+	2-6	:		reserver
+	7	: 		ERR
+*/
+char state = 0b000;
+
 void setup()
 {
 	Serial.begin(115200);
+
+	pinMode(R_LED_PIN, OUTPUT);
+	pinMode(G_LED_PIN, OUTPUT);
+	pinMode(B_LED_PIN, OUTPUT);
+	// blinken lassen
+
+	ledcSetup(0, 10, 12); // PWM für Blaue LED
+	ledcSetup(1, 10, 12); // PWM für Rote LED
+	ledcAttachPin(B_LED_PIN, 0);
+	ledcAttachPin(R_LED_PIN, 1);
 
 	// Connect to WiFi
 	Serial.print("Connect to: ");
@@ -28,6 +61,10 @@ void setup()
 
 	client.setServer(mqttServer, 1883);
 	client.setCallback(callback);
+
+	setStateOccupied(false);
+	setStateError(false);
+	setStateSetUP(true);
 }
 
 void loop()
@@ -41,6 +78,8 @@ void loop()
 		reconnect();
 	}
 	client.loop();
+
+	updateLEDs();
 }
 void callback(char *topic, byte *message, unsigned int length)
 {
@@ -97,4 +136,65 @@ void reconnect()
 void sendWeight(float weight)
 {
 	client.publish(("/" + MAC + "/currentWeight").c_str(), String(weight, 1).c_str(), true);
+}
+
+void updateLEDs()
+{
+	// Error
+	if (state & 1 << 7)
+	{
+		ledcWrite(CHANNEL_ROT, BLINKEN_EIN);
+		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
+		digitalWrite(G_LED_PIN, LOW);
+	}
+	else if (state & 1 << 0)
+	{
+		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
+		ledcWrite(CHANNEL_BLAU, BLINKEN_EIN);
+		digitalWrite(G_LED_PIN, LOW);
+	}
+}
+
+void setStateOccupied(bool value)
+{
+	static bool currentVal = false;
+
+	if (value == currentVal)
+		return;
+	currentVal = value;
+	digitalWrite(G_LED_PIN, value ? HIGH : LOW);
+}
+
+void setStateError(bool value)
+{
+	static bool currentVal = false;
+
+	if (value == currentVal)
+		return;
+	currentVal = value;
+	if (value)
+	{
+		ledcWrite(CHANNEL_ROT, BLINKEN_EIN);
+	}
+	else
+	{
+		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
+	}
+}
+
+void setStateSetUP(bool value)
+{
+	static bool currentVal = false;
+
+	if (value == currentVal)
+		return;
+	currentVal = value;
+	if (value)
+	{
+		ledcWrite(CHANNEL_BLAU, BLINKEN_EIN);
+	}
+	else
+	{
+		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
+	}
 }
