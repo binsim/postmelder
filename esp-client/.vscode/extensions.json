@@ -1,9 +1,11 @@
 {
-	// See http://go.microsoft.com/fwlink/?LinkId=827846
-	// for the documentation about the extensions.json format
-	"recommendations": [
-		"platformio.platformio-ide",
-		"peterschmalfeldt.explorer-exclude"
-	],
-	"unwantedRecommendations": ["ms-vscode.cpptools-extension-pack"]
+    // See http://go.microsoft.com/fwlink/?LinkId=827846
+    // for the documentation about the extensions.json format
+    "recommendations": [
+        "peterschmalfeldt.explorer-exclude",
+        "platformio.platformio-ide"
+    ],
+    "unwantedRecommendations": [
+        "ms-vscode.cpptools-extension-pack"
+    ]
 }
