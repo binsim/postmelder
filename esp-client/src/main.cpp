@@ -74,7 +74,10 @@ void loop()
 {
 	if (WiFi.status() != WL_CONNECTED)
 	{
-		// TODO: Show Output RGB
+		if (!(state &= 1 << 0)) // state unequal Init
+		{
+			setStateError(true);
+		}
 	}
 	else
 	{
@@ -119,6 +122,11 @@ void reconnect()
 	if (client.connected())
 		return;
 
+	if (!(state &= 1 << 0)) // state unequal Init
+	{
+		setStateError(true);
+	}
+
 	// TODO: Get MAC Address as ID
 	if (client.connect(MAC.c_str(), MQTTUSER, MQTTPASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected"))
 	{
@@ -128,6 +136,8 @@ void reconnect()
 		// Sending device now available
 		client.publish("/devices", MAC.c_str());
 		client.publish(("/" + MAC + "/online").c_str(), "connected", true);
+		setStateInit(false);
+		setStateError(false);
 	}
 	else
 	{
@@ -172,15 +182,15 @@ void updateLEDs()
 
 void setStateOccupied(bool value)
 {
-	value ? state |= 1 << 1 : state &= ~(1 << 1);
+	value ? state |= 1 << 1 : state &= ~(1 << 1); // Set/Reset Occupied Bit if value true/false
 }
 
 void setStateError(bool value)
 {
-	value ? state |= 1 << 7 : state &= ~(1 << 7);
+	value ? state |= 1 << 7 : state &= ~(1 << 7); // Set/Reset Error Bit if value true/false
 }
 
 void setStateInit(bool value)
 {
-	value ? state |= 1 << 0 : state &= ~(1 << 0);
+	value ? state |= 1 << 0 : state &= ~(1 << 0); // Set/Reset Init Bit if value true/false
 }
