@@ -5,13 +5,16 @@
 #include <Preferences.h>
 #include <nvs_flash.h>
 
-#define threshhold 2.0 // value in grams, above or below which no change will be reported
-#define WIPE false	   // if true the nvs partition and all saved values will be wiped
+#define THRESHOLD 2.0 // value in grams, above or below which no change will be reported
+#define WIPE false	  // if true the nvs partition and all saved values will be wiped
 
 #define SSID "Postmelder-Wifi"
 IPAddress mqttServer(10, 42, 0, 1);
-#define MQTTUSER "MQTTBroker"
-#define MQTTPASS "postmelder"
+#define MQTT_USER "MQTTBroker"
+#define MQTT_PASS "postmelder"
+
+#define SCALE_DATA_PIN 32
+#define SCALE_CLOCK_PIN 33
 
 WiFiClient wiFiClient;
 PubSubClient client(wiFiClient);
@@ -19,34 +22,26 @@ PubSubClient client(wiFiClient);
 HX711 scale;			 // scale object
 Preferences preferences; // preferences object
 
-uint8_t dataPin = 32; // scale pins
-uint8_t clockPin = 33;
+float weight = 0;	   // scale measurement variables
+bool weightChange = 0; // saves whether weight has changed
 
-uint32_t start, stop;
-volatile float f;
+float scaleValue;	   // calibrated scale values -> Flash
+long scaleOffset;	   // -> Flash
+bool scaleInitialised; // saves whether the scale has already been calibrated-> Flash
 
-float weight = 0; // scale measurement variables
-float previousweight = 0;
-
-bool weightchange = 0; // saves whether weight has changed
-
-float scaleValue; // calibrated scale values -> Flash
-long scaleOffset; // -> Flash
-bool initialised; // saves whether the scale has already been calibrated-> Flash
-
-void callback(char *topic, byte *message, unsigned int length);
-void reconnect();
-void sendWeight(float weight);
 const String MAC = WiFi.macAddress();
 bool connectedWithNode = false;
 bool isServerOnline = false;
 
+void callback(char *topic, byte *message, unsigned int length);
+void reconnect();
+void sendWeight(float weight);
 void calibrateScale();
 float readScale();
 
 void setup()
 {
-#if WIPE //if wipe is defined
+#if WIPE			   // if wipe is defined
 	nvs_flash_erase(); // format nvs-partition
 	nvs_flash_init();  // initialise nvs-partition
 #endif
@@ -62,25 +57,25 @@ void setup()
 	client.setCallback(callback);
 	preferences.begin("postmelder", false); // start preferences
 
-	scale.begin(dataPin, clockPin); // start scale
+	scale.begin(SCALE_DATA_PIN, SCALE_CLOCK_PIN); // start scale
 	while (!scale.is_ready())
 	{ // wait until scale started
 		delay(100);
 	}
 
-	initialised = preferences.getBool("initialised"); // read flag from flash
+	scaleInitialised = preferences.getBool("initialised"); // read flag from flash
 
-	if (!initialised)
+	if (!scaleInitialised)
 	{ // calibrate and write values to flash if not initialised
 
 		Serial.println("not yet initialised, starting calibration");
 		calibrateScale();
 
-		initialised = true;
+		scaleInitialised = true;
 
 		preferences.putFloat("scaleValue", scaleValue); // save values to flash
 		preferences.putLong("scaleOffset", scaleOffset);
-		preferences.putBool("initialised", initialised);
+		preferences.putBool("initialised", scaleInitialised);
 	}
 	else
 	{ // read values from flash if already initialised
@@ -89,7 +84,7 @@ void setup()
 		scaleValue = preferences.getFloat("scaleValue", 0);
 		scaleOffset = preferences.getLong("scaleOffset", 0);
 
-		scale.set_offset(scaleOffset); //set scale values
+		scale.set_offset(scaleOffset); // set scale values
 		scale.set_scale(scaleValue);
 	}
 
@@ -110,30 +105,30 @@ void loop()
 
 	if (scale.is_ready())
 	{ // check if scale is ready
-		previousweight = weight;
+		static float previousWeight = weight;
 		weight = readScale();
 
-		while (weight >= previousweight + threshhold || weight <= previousweight - threshhold)
-		{ // if weight changed above or below threshhold loop until weight has settled in
-			weightchange = true;
+		while (weight >= previousWeight + THRESHOLD || weight <= previousWeight - THRESHOLD)
+		{ // if weight changed above or below threshold loop until weight has settled in
+			weightChange = true;
 
 			Serial.print("Change detected, weight: "); // print to serial monitor
 			Serial.print(weight, 1);
 			Serial.println("g");
 
-			previousweight = weight;
+			previousWeight = weight;
 			weight = readScale();
 
 			delay(250);
 		}
 
-		if (weightchange)
-		{									// if weight changed over threshhold
+		if (weightChange)
+		{									// if weight changed over threshold
 			Serial.print("final weight: "); // print to serial monitor
 			Serial.print(weight);
 			Serial.println("g");
 
-			weightchange = false; // reset change
+			weightChange = false; // reset change
 
 			sendWeight(weight); // send weight over MQTT
 		}
@@ -177,7 +172,7 @@ void reconnect()
 		return;
 
 	// TODO: Get MAC Address as ID
-	if (client.connect(MAC.c_str(), MQTTUSER, MQTTPASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected"))
+	if (client.connect(MAC.c_str(), MQTT_USER, MQTT_PASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected"))
 	{
 		client.subscribe(("/" + MAC + "/#").c_str());
 		client.subscribe("/server/online");
