@@ -2,8 +2,11 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <HX711.h>
+#include <Preferences.h>
+#include <nvs_flash.h>
 
 #define threshhold 2.0 // value in grams, above or below which no change will be reported
+#define WIPE false	   // if true the nvs partition and all saved values will be wiped
 
 #define SSID "Postmelder-Wifi"
 IPAddress mqttServer(10, 42, 0, 1);
@@ -13,7 +16,8 @@ IPAddress mqttServer(10, 42, 0, 1);
 WiFiClient wiFiClient;
 PubSubClient client(wiFiClient);
 
-HX711 scale; // scale object
+HX711 scale;			 // scale object
+Preferences preferences; // preferences object
 
 uint8_t dataPin = 32; // scale pins
 uint8_t clockPin = 33;
@@ -24,10 +28,11 @@ volatile float f;
 float weight = 0; // scale measurement variables
 float previousweight = 0;
 
-bool weightchange = 0; //saves whether weight has changed
+bool weightchange = 0; // saves whether weight has changed
 
 float scaleValue; // calibrated scale values -> Flash
 long scaleOffset; // -> Flash
+bool initialised; // saves whether the scale has already been calibrated-> Flash
 
 void callback(char *topic, byte *message, unsigned int length);
 void reconnect();
@@ -41,6 +46,11 @@ float readScale();
 
 void setup()
 {
+#if WIPE //if wipe is defined
+	nvs_flash_erase(); // format nvs-partition
+	nvs_flash_init();  // initialise nvs-partition
+#endif
+
 	Serial.begin(115200); // Serial connection to PC
 
 	// Connect to WiFi
@@ -50,6 +60,7 @@ void setup()
 
 	client.setServer(mqttServer, 1883);
 	client.setCallback(callback);
+	preferences.begin("postmelder", false); // start preferences
 
 	scale.begin(dataPin, clockPin); // start scale
 	while (!scale.is_ready())
@@ -57,7 +68,32 @@ void setup()
 		delay(100);
 	}
 
-	calibrateScale(); // only if not initialised
+	initialised = preferences.getBool("initialised"); // read flag from flash
+
+	if (!initialised)
+	{ // calibrate and write values to flash if not initialised
+
+		Serial.println("not yet initialised, starting calibration");
+		calibrateScale();
+
+		initialised = true;
+
+		preferences.putFloat("scaleValue", scaleValue); // save values to flash
+		preferences.putLong("scaleOffset", scaleOffset);
+		preferences.putBool("initialised", initialised);
+	}
+	else
+	{ // read values from flash if already initialised
+		Serial.println("already initialised, loading values...");
+
+		scaleValue = preferences.getFloat("scaleValue", 0);
+		scaleOffset = preferences.getLong("scaleOffset", 0);
+
+		scale.set_offset(scaleOffset); //set scale values
+		scale.set_scale(scaleValue);
+	}
+
+	preferences.end(); // close preferences
 	weight = readScale();
 }
 
