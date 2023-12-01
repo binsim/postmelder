@@ -9,9 +9,9 @@ IPAddress mqttServer(10, 42, 0, 1);
 #define MQTTPASS "postmelder"
 
 // ------------------------------- Pinout ----------------------------  //
-#define R_LED_PIN 2
-#define G_LED_PIN 3
-#define B_LED_PIN 4
+#define R_LED_PIN 0
+#define G_LED_PIN 2
+#define B_LED_PIN 15
 
 // ------------------------- PMW Blinking ------------------------------ //
 #define CHANNEL_BLAU 0
