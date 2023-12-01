@@ -61,10 +61,6 @@ void setup()
 
 	client.setServer(mqttServer, 1883);
 	client.setCallback(callback);
-
-	setStateOccupied(false);
-	setStateError(false);
-	setStateSetUP(true);
 }
 
 void loop()
@@ -153,48 +149,16 @@ void updateLEDs()
 		ledcWrite(CHANNEL_BLAU, BLINKEN_EIN);
 		digitalWrite(G_LED_PIN, LOW);
 	}
-}
-
-void setStateOccupied(bool value)
-{
-	static bool currentVal = false;
-
-	if (value == currentVal)
-		return;
-	currentVal = value;
-	digitalWrite(G_LED_PIN, value ? HIGH : LOW);
-}
-
-void setStateError(bool value)
-{
-	static bool currentVal = false;
-
-	if (value == currentVal)
-		return;
-	currentVal = value;
-	if (value)
+	else if (state & 1 << 1)
 	{
-		ledcWrite(CHANNEL_ROT, BLINKEN_EIN);
+		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
+		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
+		digitalWrite(G_LED_PIN, HIGH);
 	}
 	else
 	{
 		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
-	}
-}
-
-void setStateSetUP(bool value)
-{
-	static bool currentVal = false;
-
-	if (value == currentVal)
-		return;
-	currentVal = value;
-	if (value)
-	{
-		ledcWrite(CHANNEL_BLAU, BLINKEN_EIN);
-	}
-	else
-	{
 		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
+		digitalWrite(G_LED_PIN, LOW);
 	}
 }
