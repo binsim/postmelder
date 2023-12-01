@@ -5,14 +5,14 @@
 #include <Preferences.h>
 #include <nvs_flash.h>
 
-#define THRESHOLD 2.0 // value in grams, above or below which no change will be reported
-#define WIPE false	  // if true the nvs partition and all saved values will be wiped
+#define WIPE false // if true the nvs partition and all saved values will be wiped
 
 #define SSID "Postmelder-Wifi"
 IPAddress mqttServer(10, 42, 0, 1);
 #define MQTT_USER "MQTTBroker"
 #define MQTT_PASS "postmelder"
 
+#define SCALE_THRESHOLD 2.0 // value in grams, above or below which no change will be reported in grams
 #define SCALE_DATA_PIN 32
 #define SCALE_CLOCK_PIN 33
 
@@ -108,7 +108,7 @@ void loop()
 		static float previousWeight = weight;
 		weight = readScale();
 
-		while (weight >= previousWeight + THRESHOLD || weight <= previousWeight - THRESHOLD)
+		while (weight >= previousWeight + SCALE_THRESHOLD || weight <= previousWeight - SCALE_THRESHOLD)
 		{ // if weight changed above or below threshold loop until weight has settled in
 			weightChange = true;
 
