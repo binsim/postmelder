@@ -103,7 +103,7 @@ async function testMessage(e, deviceId) {
 	}
 }
 
-const history_h2_default_text = undefined;
+let history_h2_default_text = undefined;
 async function boxDetails(e, deviceId) {
 	e.stopPropagation();
 
