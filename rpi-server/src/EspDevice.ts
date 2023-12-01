@@ -202,7 +202,7 @@ export class Device extends EventEmitter implements IDevice {
 		logger.info(`${this._device.id} has been emptied`);
 	}
 	get history() {
-		return this._device.history;
+		return this._device.history ?? [];
 	}
 	public toJSON() {
 		return {
