@@ -88,7 +88,7 @@ export class NotificationService {
 	}
 	static testConfig(config: INotificationConfig) {
 		return new Promise((resolve, reject) => {
-			let options = this.getOptionsFromConfig(config);
+			const options = this.getOptionsFromConfig(config);
 			let transporter = createTransport(options);
 
 			transporter.verify((err) => {

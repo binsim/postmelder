@@ -36,9 +36,4 @@ export function decrypt(hash: { iv: string; data: string; authTag: string }) {
 		decipher.update(Buffer.from(hash.data, 'hex')).toString('utf-8') +
 		decipher.final('utf-8')
 	);
-
-	// return Buffer.concat([
-	// 	decipher.update(hash.data),
-	// 	decipher.final(),
-	// ]).toString();
 }
