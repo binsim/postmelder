@@ -26,6 +26,9 @@ void callback(char *topic, byte *message, unsigned int length);
 void reconnect();
 void sendWeight(float weight);
 void updateLEDs();
+void setStateOccupied(bool value);
+void setStateError(bool value);
+void setStateSetUP(bool value);
 
 const String MAC = WiFi.macAddress();
 bool connectedWithNode = false;
@@ -61,6 +64,10 @@ void setup()
 
 	client.setServer(mqttServer, 1883);
 	client.setCallback(callback);
+
+	setStateOccupied(false);
+	setStateError(false);
+	setStateSetUP(true);
 }
 
 void loop()
@@ -160,5 +167,49 @@ void updateLEDs()
 		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
 		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
 		digitalWrite(G_LED_PIN, LOW);
+	}
+}
+
+void setStateOccupied(bool value)
+{
+	static bool currentVal = false;
+
+	if (value == currentVal)
+		return;
+	currentVal = value;
+	digitalWrite(G_LED_PIN, value ? HIGH : LOW);
+}
+
+void setStateError(bool value)
+{
+	static bool currentVal = false;
+
+	if (value == currentVal)
+		return;
+	currentVal = value;
+	if (value)
+	{
+		ledcWrite(CHANNEL_ROT, BLINKEN_EIN);
+	}
+	else
+	{
+		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
+	}
+}
+
+void setStateSetUP(bool value)
+{
+	static bool currentVal = false;
+
+	if (value == currentVal)
+		return;
+	currentVal = value;
+	if (value)
+	{
+		ledcWrite(CHANNEL_BLAU, BLINKEN_EIN);
+	}
+	else
+	{
+		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
 	}
 }
