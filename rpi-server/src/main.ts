@@ -121,6 +121,8 @@ app.post('/notServiceConf', async (req, res) => {
 	if (req.body.username === NotificationService.Instance.Config?.username) {
 		if (!req.body.password) {
 			req.body.password = NotificationService.Instance.Config?.password;
+		} else {
+			req.body.password = encrypt(req.body.password);
 		}
 	} else {
 		if (!req.body.password) {

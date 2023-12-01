@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { scheduleJob } from 'node-schedule';
 import { CheckInterval, HistoryType, IDevice } from './EspDevice';
-import { decrypt, encrypt } from './encrypt';
+import { HashData, decrypt, encrypt } from './encrypt';
 import { logger } from './logging';
 
 export const DEFAULT_SMTP_PORT = 587;
@@ -11,10 +11,10 @@ const CONFIG_FILE = 'data/mail.json';
 
 interface INotificationConfig {
 	username: string;
-	password: { iv: string; data: string; authTag: string };
+	password: HashData;
 	host: string;
 	port?: number;
-	secure: boolean;
+	ssl: boolean;
 }
 export class NotificationService {
 	private static _instance: NotificationService;
@@ -74,17 +74,21 @@ export class NotificationService {
 		return new Promise((resolve, _) => {
 			if (this.transporter == undefined) {
 				resolve(false);
+				logger.warn('Transporter can not be connected if undefined');
 				return;
 			}
 
 			this.transporter.verify((err) => {
+				if (err) {
+					logger.warn(`Transporter is not connected due to ${err}`);
+				}
 				resolve(!err);
 			});
 		});
 	}
 	static testConfig(config: INotificationConfig) {
 		return new Promise((resolve, reject) => {
-			let options = this.getOptionsFromConfig(config);
+			const options = this.getOptionsFromConfig(config);
 			let transporter = createTransport(options);
 
 			transporter.verify((err) => {
@@ -234,12 +238,6 @@ export class NotificationService {
 				);
 			}
 
-			config.password = encrypt(
-				config.password.data,
-				config.password.iv !== undefined
-					? config.password.iv
-					: undefined
-			);
 			writeFileSync(CONFIG_FILE, JSON.stringify({ transporter: config }));
 			logger.info('Successfully update NotificationService config');
 		}
@@ -300,7 +298,7 @@ export class NotificationService {
 			},
 		};
 
-		if (config.secure) {
+		if (config.ssl) {
 			data.tls = { ciphers: 'SSLv3' };
 			data.secure = false;
 		}
