@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { scheduleJob } from 'node-schedule';
 import { CheckInterval, HistoryType, IDevice } from './EspDevice';
-import { HashData, decrypt, encrypt } from './encrypt';
+import { HashData, decrypt } from './encrypt';
 import { logger } from './logging';
 
 export const DEFAULT_SMTP_PORT = 587;

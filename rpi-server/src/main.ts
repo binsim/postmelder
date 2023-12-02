@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { config } from 'dotenv';
 import { MQTTService } from './mqttService';
-import { StateService, IStateService } from './status';
+import { StateService } from './status';
 import { DEFAULT_SMTP_PORT, NotificationService } from './notification';
 import { CheckIntervals, IDevice } from './EspDevice';
 import { encrypt } from './encrypt';
@@ -26,20 +26,20 @@ app.set('view engine', 'ejs');
 
 // Run ctor
 NotificationService.Instance;
-const stateService: IStateService = new StateService();
+StateService.Instance;
 
 MQTTService.Instance.on('connectionChanged', (value) =>
-	stateService.mqttOnlineStateChanged(value)
+	StateService.Instance.mqttOnlineStateChanged(value)
 );
 MQTTService.Instance.on('deviceAdded', (device) => {
 	NotificationService.Instance.addDevice(device);
-	stateService.addDeviceListener(device);
+	StateService.Instance.addDeviceListener(device);
 });
 MQTTService.Instance.connect();
 //#endregion Setup
 
 //#region API
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_: Request, res: Response) => {
 	let devices;
 	{
 		const configured: IDevice[] = [];

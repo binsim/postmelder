@@ -11,6 +11,7 @@ export interface IStateService {
 	mqttOnlineStateChanged(isConnected: boolean): void;
 }
 export class StateService implements IStateService {
+	private static _instance: StateService;
 	private r_pin = 1;
 	private g_pin = 1;
 	private b_pin = 1;
@@ -18,7 +19,7 @@ export class StateService implements IStateService {
 	private deviceList: IDevice[] = [];
 	private _externalError = false;
 
-	constructor() {
+	private constructor() {
 		// TODO: Log warnings of this function
 		init({ close_on_exit: true, mapping: 'gpio' });
 
@@ -30,6 +31,10 @@ export class StateService implements IStateService {
 		this.updateColor();
 	}
 
+	public static get Instance(): StateService {
+		if (this._instance === undefined) this._instance = new StateService();
+		return this._instance;
+	}
 	get externalError() {
 		return this._externalError;
 	}
