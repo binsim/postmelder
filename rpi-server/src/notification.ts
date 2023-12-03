@@ -308,18 +308,6 @@ export class NotificationService {
 		device: IDevice
 	): string | undefined {
 		if (msg === undefined) return undefined;
-
-		function getHistory(history: HistoryType[]): string {
-			let HistoryString = '\n';
-			history?.forEach((el) => {
-				HistoryString +=
-					new Date(el.timeStamp).toLocaleString() +
-					': ' +
-					el.weight.toLocaleString() +
-					'g\n';
-			});
-			return HistoryString;
-		}
 		return msg
 			.replace(
 				new RegExp('{BOXNR}', 'g'),
@@ -327,7 +315,9 @@ export class NotificationService {
 			)
 			.replace(
 				new RegExp('{WEIGHT}', 'g'),
-				device.currentWeight?.toLocaleString() + 'g'
+				device.currentWeight
+					? device.currentWeight.toLocaleString() + 'g'
+					: '{WEIGHT:undefined}'
 			)
 			.replace(
 				new RegExp('{LASTEMPTIED}', 'g'),
@@ -335,7 +325,19 @@ export class NotificationService {
 					? new Date(device.lastEmptied).toLocaleString()
 					: '{LASTEMPTIED:undefined}'
 			)
-			.replace(new RegExp('{HISTORY}', 'g'), getHistory(device.history));
+			.replace(
+				new RegExp('{HISTORY}', 'g'),
+				device.history
+					? `\n${device.history
+							.map(
+								(el) =>
+									`${new Date(
+										el.timeStamp
+									).toLocaleString()}: ${el.weight.toLocaleString()}g`
+							)
+							.join('\n')}\n`
+					: '{HISTORY:undefined}'
+			);
 	}
 
 	/**
