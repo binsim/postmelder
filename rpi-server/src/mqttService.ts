@@ -4,14 +4,37 @@ import EventEmitter from 'node:events';
 import { logger } from './logging';
 
 export declare interface IMQTTService {
+	/**
+	 * Detected devices by mqtt service
+	 */
 	get devices(): IDevice[];
+	/**
+	 * Online state of mqtt service
+	 */
 	get isConnected(): boolean;
 
+	/**
+	 * Connect to mqtt broker
+	 * This must be called for mqtt service to work
+	 */
 	connect(): void;
 
+	/**
+	 * get a device by entered id
+	 *
+	 * @param id The id of the requested device
+	 * @returns The device with entered id or undefined
+	 */
 	getDeviceByID(id: string): IDevice | undefined;
+	/**
+	 * Apply a update for entered device
+	 *
+	 * @param device new device information
+	 */
 	updateDevice(device: IDevice): void;
 
+	// Subscribing to events
+	// No need to unsubscribe to thous events, because they are called once in main
 	on(event: 'connectionChanged', callback: (value: boolean) => void): void;
 	on(event: 'deviceAdded', callback: (device: IDevice) => void): void;
 }
@@ -49,7 +72,9 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 		if (value === this._isConnected) return;
 
 		this._isConnected = value;
+		// Emit event online changed to update state LEDs
 		this.emit('connectionChanged', this._isConnected);
+		// This is a critical information thus it gets logged
 		if (this._isConnected) {
 			logger.info('MQTT connection successfully established');
 		} else {
@@ -58,6 +83,15 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 	}
 
 	connect() {
+		// No need to connect if already connected
+		if (this.isConnected) {
+			logger.warn(
+				'Tried to reconnect ot mqtt broker. This method should only be called once'
+			);
+			return;
+		}
+
+		// connect to mqtt
 		this._client = connect('mqtt://mqtt', {
 			username: process.env.MQTT_USERNAME,
 			password: process.env.MQTT_PASSWORD,
@@ -70,6 +104,9 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 
 		this._client.on('error', (err: Error) => {
 			this.isConnected = false;
+			// TODO: Incase of local execution docker is not running and errors are constantly loged
+			// 		 catch same errors after printing it a x-th time and print it again rarely
+
 			// TODO: Handle Error
 			logger.error(`MQTT Client error: ${err.message}`);
 		});
@@ -79,13 +116,14 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 			this.client.subscribe('/devices');
 			logger.info(`Subscribing to '/devices'`);
 
+			// Publish to trigger devices to send needed information that have no retain flag
 			this.client.publish('/server/online', Buffer.from('connected'), {
 				retain: true,
 			});
+
+			// TODO: Contact already added devices
 		});
-		this._client.on('message', (topic: string, payload: Buffer) =>
-			this.onMessageArrived(topic, payload)
-		);
+		this._client.on('message', this.onMessageArrived);
 	}
 
 	getDeviceByID(id: string): IDevice | undefined {
@@ -109,9 +147,18 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 			this._devices[index] = device;
 		}
 
-		saveToFile(this.devices);
+		this.saveToFile();
 	}
 
+	private saveToFile() {
+		// Write to file after not adding a new device for 15 secs
+		// to reduce writing to much or damaging the file
+		if (this._deviceSaveToFileTimeout)
+			clearTimeout(this._deviceSaveToFileTimeout);
+		this._deviceSaveToFileTimeout = setTimeout(() => {
+			saveToFile(this._devices);
+		}, 15_000);
+	}
 	private onMessageArrived(topic: string, payload: Buffer) {
 		// Connecting new device
 		if (topic === '/devices') {
@@ -133,12 +180,7 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 				this.emit('deviceAdded', device);
 				logger.info(`MQTTService found new device: ${device.id}`);
 
-				// Write to file after not adding a new device for 15 secs
-				if (this._deviceSaveToFileTimeout)
-					clearTimeout(this._deviceSaveToFileTimeout);
-				this._deviceSaveToFileTimeout = setTimeout(() => {
-					saveToFile(this._devices);
-				}, 15_000);
+				this.saveToFile();
 			}
 
 			// Respond to client to let it know it has been registered
@@ -151,8 +193,13 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 		const device = this.getDeviceByID(firstTopic);
 
 		if (device) {
-			(device as Device)._onMessageArrived(topic, payload);
-			return;
+			try {
+				(device as Device)._onMessageArrived(topic, payload);
+				return;
+			} catch (error) {
+				// Only return if message handled correctly
+				logger.warn(error);
+			}
 		}
 
 		// Topic is not for an existing device

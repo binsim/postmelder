@@ -1,7 +1,8 @@
 import { test, describe, expect } from '@jest/globals';
-import {  StateService } from './status';
+import { StateService } from './status';
 
 describe('Status', () => {
+	// Hide error message of the libraries init function
 	jest.spyOn(console, 'error').mockImplementation(() => {});
 
 	test('Status ok after start', () => {
