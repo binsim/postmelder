@@ -1,3 +1,4 @@
+//#region Define element variables
 const notification_conf_dialog = document.querySelector(
 	'dialog.notServiceConf'
 );
@@ -24,7 +25,9 @@ const testmessage_response_dialog_close_btn =
 const box_details_dialog = document.querySelector('dialog.box-details');
 const box_details_dialog_close_btn =
 	box_details_dialog.querySelector('button#close');
+//#endregion Define element variables
 
+//#region DOM event listener
 box_details_dialog_close_btn.addEventListener('click', () => {
 	box_details_dialog.close();
 });
@@ -48,6 +51,7 @@ notification_port_checkbox.addEventListener('change', () => {
 		notification_port_input.value = DEFAULT_SMTP_PORT;
 	}
 });
+//#endregion DOM event listener
 
 function configureDevice(device) {
 	// Getting all elements
@@ -73,8 +77,11 @@ function configureDevice(device) {
 
 async function testMessage(e, deviceId) {
 	e.stopPropagation();
+	// Show loader
+	loader.style.display = 'none';
 	testmessage_response_dialog.showModal();
 
+	// Getting all elements
 	const accepted_destinations_ul = testmessage_response_dialog.querySelector(
 		'.accepted-destinations ul'
 	);
@@ -83,10 +90,17 @@ async function testMessage(e, deviceId) {
 	);
 	const loader = testmessage_response_dialog.querySelector('.loader-wrapper');
 
+	// Clear elements
+	accepted_destinations_ul.innerHTML = '';
+	rejected_destinations_ul.innerHTML = '';
+
+	// Trigger test message sending and get response
 	const response = await (await fetch('/testMessage?id=' + deviceId)).json();
 
+	// Remove loader
 	loader.style.display = 'none';
 
+	// Visualize response
 	if (response.accepted) {
 		response.accepted.forEach((e) => {
 			const i = document.createElement('li');
@@ -107,24 +121,30 @@ let history_h2_default_text = undefined;
 async function boxDetails(e, deviceId) {
 	e.stopPropagation();
 
+	// Getting all elements
 	const last_emptied_p = box_details_dialog.querySelector('p');
 	const history_h2 = box_details_dialog.querySelectorAll('h2')[1];
 	const history_ul = box_details_dialog.querySelector('ul');
 
+	// Initialize default text or reset to it
 	if (history_h2_default_text === undefined) {
 		history_h2_default_text = history_h2.innerText;
 	} else {
 		history_h2.innerText = history_h2_default_text;
 	}
 
+	// Show dialog
 	box_details_dialog.showModal();
 
+	// Get box details
 	const response = await (await fetch('/boxDetails?id=' + deviceId)).json();
 
-	const last_emptied = new Date(response.lastEmptied);
-	last_emptied_p.innerText = last_emptied.toLocaleString();
+	// Visualize last emptied
+	last_emptied_p.innerText = new Date(response.lastEmptied).toLocaleString();
 
+	// Visualize history
 	if (response.history.length > 0) {
+		// Show history with weight and date
 		response.history.forEach((i) => {
 			const li = document.createElement('li');
 			li.innerHTML = `<span class="weight">${
@@ -135,6 +155,7 @@ async function boxDetails(e, deviceId) {
 			history_ul.appendChild(li);
 		});
 	} else {
+		// Show only that it is currently empty because there is no history
 		history_ul.innerHTML = '';
 		history_h2.innerText = 'Postfach ist leer';
 	}
