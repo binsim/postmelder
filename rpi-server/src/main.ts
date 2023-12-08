@@ -254,6 +254,58 @@ app.post('/config-device', (req, res) => {
 	res.status(200);
 	res.redirect('/');
 });
+app.post('/calibrate/:clientID/:stage', async (req, res) => {
+	// Try getting device by given id
+	const device = MQTTService.Instance.getDeviceByID(req.params.clientID);
+	if (device === undefined) {
+		res.sendStatus(404);
+		return;
+	}
+
+	try {
+		switch (req.params.stage) {
+			case '0':
+				const scaleOffset = await device.calcScaleOffset();
+				res.status(200).json({
+					scaleOffset,
+				});
+				return;
+			case '1':
+				if (isNaN(Number(req.body.weight))) {
+					res.sendStatus(400);
+					return;
+				}
+				const scaleValue = await device.calcScaleWeight(
+					Number(req.body.weight)
+				);
+				res.status(200).json({
+					scaleValue,
+				});
+				return;
+			case '2':
+				if (
+					isNaN(Number(req.body.scaleOffset)) ||
+					isNaN(Number(req.body.scaleValue))
+				) {
+					res.sendStatus(400);
+					return;
+				}
+				device.applyScaleCalibration(
+					Number(req.body.scaleOffset),
+					Number(req.body.scaleValue)
+				);
+
+				res.send(200);
+				return;
+			default:
+				res.status(404).send('Invalid stage');
+				return;
+		}
+	} catch (error) {
+		logger.error(error);
+		res.sendStatus(500);
+	}
+});
 //#endregion API
 
 // Start web service

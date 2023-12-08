@@ -66,7 +66,61 @@ calibrate_cancel_btn.addEventListener('click', () => {
 calibrate_prev_button.addEventListener('click', () => {
 	calibrate_stage_changed(-1);
 });
-calibrate_next_button.addEventListener('click', () => {
+calibrate_next_button.addEventListener('click', async () => {
+	let response;
+	// TODO: catch errors
+	switch (current_calibrate_stage) {
+		case 0:
+			response = await fetch(
+				`/calibrate/${current_calibrate_device}/${current_calibrate_stage}`,
+				{
+					method: 'POST',
+				}
+			);
+			console.log(response);
+			break;
+		case 1:
+			response = await fetch(
+				`/calibrate/${current_calibrate_device}/${current_calibrate_stage}`,
+				{
+					method: 'POST',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						weight: calibrate_dialog.querySelector('input#weight')
+							.value,
+					}),
+				}
+			);
+			console.log(response);
+			// TODO: save response data
+			break;
+		case 2:
+			response = await fetch(
+				`/calibrate/${current_calibrate_device}/${current_calibrate_stage}`,
+				{
+					method: 'POST',
+					headers: {
+						Accept: 'application/json',
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						scaleOffset:
+							calibrate_dialog.querySelector(
+								'input#scale-offset'
+							),
+						scaleValue:
+							calibrate_dialog.querySelector('input#scale-value')
+								.value,
+					}),
+				}
+			);
+			console.log(response);
+			// TODO: save response data
+			break;
+	}
 	calibrate_stage_changed(+1);
 });
 calibrate_finish_button.addEventListener('click', () => {

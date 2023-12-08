@@ -97,6 +97,10 @@ export declare interface IDevice extends JSON_Device {
 			newVal: CheckInterval | undefined
 		) => void
 	): this;
+
+	calcScaleOffset(): Promise<number>;
+	calcScaleWeight(weight: number): Promise<number>;
+	applyScaleCalibration(scaleOffset: number, scaleValue: number): void;
 }
 
 export class Device extends EventEmitter implements IDevice {
@@ -118,6 +122,7 @@ export class Device extends EventEmitter implements IDevice {
 	_onMessageArrived(topic: string, payload: Buffer) {
 		// TODO: Add logging
 
+		// TODO: Optimize
 		switch (topic.split('/').at(-1)) {
 			case 'online':
 				// Update the online
@@ -260,6 +265,33 @@ export class Device extends EventEmitter implements IDevice {
 		return {
 			...this._device,
 		};
+	}
+	public calcScaleOffset(): Promise<number> {
+		return new Promise((resolve, reject) => {
+			const timeout = setTimeout(() => {
+				reject(
+					'Timeout for calcScaleOffset elapsed, response took to long'
+				);
+			}, 5_000);
+			// TODO: Implement
+		});
+	}
+	public calcScaleWeight(weight: number): Promise<number> {
+		return new Promise((resolve, reject) => {
+			const timeout = setTimeout(() => {
+				reject(
+					'Timeout for calcScaleOffset elapsed, response took to long'
+				);
+			}, 5_000);
+			// TODO: Implement
+		});
+	}
+
+	public applyScaleCalibration(
+		scaleOffset: number,
+		scaleValue: number
+	): void {
+		// TODO: Implement
 	}
 }
 
