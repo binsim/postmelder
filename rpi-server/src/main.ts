@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { config } from 'dotenv';
 import { MQTTService } from './mqttService';
-import { StateService, IStateService } from './status';
+import { StateService } from './status';
 import { DEFAULT_SMTP_PORT, NotificationService } from './notification';
 import { CheckIntervals, IDevice } from './EspDevice';
 import { encrypt } from './encrypt';
@@ -26,41 +26,34 @@ app.set('view engine', 'ejs');
 
 // Run ctor
 NotificationService.Instance;
-const stateService: IStateService = new StateService();
+StateService.Instance;
 
+// Attach MQTT online to StateService to be shown for user
 MQTTService.Instance.on('connectionChanged', (value) =>
-	stateService.mqttOnlineStateChanged(value)
+	StateService.Instance.mqttOnlineStateChanged(value)
 );
+// Add new device to NotificationService and StateService
 MQTTService.Instance.on('deviceAdded', (device) => {
 	NotificationService.Instance.addDevice(device);
-	stateService.addDeviceListener(device);
+	StateService.Instance.addDeviceListener(device);
 });
+
+// Connect to MQTT Broker
 MQTTService.Instance.connect();
 //#endregion Setup
 
 //#region API
-app.get('/', (req: Request, res: Response) => {
-	let devices;
-	{
-		const configured: IDevice[] = [];
-		const toConfigure: IDevice[] = [];
 
-		MQTTService.Instance.devices.forEach((device) => {
-			if (device.isCompletelyConfigured) {
-				configured.push(device);
-			} else {
-				toConfigure.push(device);
-			}
-		});
-
-		devices = {
-			configured,
-			toConfigure,
-		};
-	}
-
+app.get('/', (_: Request, res: Response) => {
 	res.render('pages/index', {
-		devices,
+		devices: {
+			configured: MQTTService.Instance.devices.filter(
+				(device) => device.isCompletelyConfigured
+			),
+			toConfigure: MQTTService.Instance.devices.filter(
+				(device) => !device.isCompletelyConfigured
+			),
+		},
 		constants: {
 			checkIntervals: CheckIntervals,
 			DEFAULT_SMTP_PORT,
@@ -70,11 +63,16 @@ app.get('/', (req: Request, res: Response) => {
 		},
 	});
 });
+
+// Send a test message to the specified subscribers and responde to the user
 app.get('/testMessage', async (req, res) => {
+	// Check if id is correctly given
 	if (typeof req.query.id !== 'string') {
 		res.status(400).send('ID is not a string');
 		return;
 	}
+
+	// Try getting device with given id
 	const device = MQTTService.Instance.getDeviceByID(req.query.id);
 	if (device === undefined) {
 		res.status(400).send('Entered id not found');
@@ -82,11 +80,17 @@ app.get('/testMessage', async (req, res) => {
 	}
 
 	try {
+		// Sending the message to the subscribers
 		const response = await NotificationService.Instance.sendTestMessage(
 			device
 		);
+
+		// Message has been sent successfully
+		// sending full response to the user for log
+		// TODO: optimize response to not send unwanted information
 		res.status(200).json(response);
 	} catch (error) {
+		// Message can not be sent
 		logger.error(error);
 		res.sendStatus(400).send(
 			'Error while sending test message, please check log file'
@@ -94,24 +98,35 @@ app.get('/testMessage', async (req, res) => {
 		return;
 	}
 });
+
+// Get information about the given box
 app.get('/boxDetails', (req, res) => {
+	// Check if a box id has been entered
 	if (req.query.id === undefined) {
-		res.sendStatus(404);
+		// No device id has been entered
+		res.sendStatus(400);
 		return;
 	}
+
+	// Try getting device with given id
 	const device = MQTTService.Instance.getDeviceByID(req.query.id as string);
-
 	if (device === undefined) {
+		// Device has not been found
 		res.sendStatus(404);
 		return;
 	}
 
+	// Sending the required information
 	res.status(200).json({
 		lastEmptied: device.lastEmptied,
 		history: device.history,
 	});
 });
+
+// Notification configuration has been modified and shall be updated
 app.post('/notServiceConf', async (req, res) => {
+	// Cancel button has been pressed
+	// Do nothing and return to homepage
 	if (req.body.cancel !== undefined) {
 		res.redirect('/');
 		return;
@@ -120,22 +135,34 @@ app.post('/notServiceConf', async (req, res) => {
 	// Add password to body if it can't be changed if username hasn't been changed
 	if (req.body.username === NotificationService.Instance.Config?.username) {
 		if (!req.body.password) {
+			// Password has not been changed but needed for validating transporter
 			req.body.password = NotificationService.Instance.Config?.password;
+		} else {
+			// Encrypting the newly added password for saving to file
+			req.body.password = encrypt(req.body.password);
 		}
 	} else {
 		if (!req.body.password) {
+			// A password is neccessary for a user
+			// do not update
 			res.status(400).send(
 				'No password given, please add a password for current user'
 			);
+			return;
 		}
+		// Encrypting the newly added password for saving to file
 		req.body.password = encrypt(req.body.password);
 	}
+	// set port to default port if no port has been entered
 	req.body.port = req.body.port ? Number(req.body.port) : DEFAULT_SMTP_PORT;
+	// convert ssl to bool
 	req.body.ssl = req.body.ssl === 'on';
 
-	// TODO: Validate transporter with new config
+	// check if newly entered config is valid for the transporter
+	// TODO: get reason why transporter is invalid
 	let isValid = await NotificationService.testConfig(req.body);
 	if (!isValid) {
+		// transporter is invalid do not change and inform the user about it
 		// TODO: Send more information
 		res.status(422).send('Connection to given SMTP Server not possible');
 		logger.warn(
@@ -145,9 +172,13 @@ app.post('/notServiceConf', async (req, res) => {
 	}
 
 	try {
+		// Update the configuration
 		NotificationService.Instance.updateConfig(req.body);
+		// Return to homepage
 		res.redirect('/');
 	} catch (error) {
+		// Something went wrong by updating the config
+		// inform the user
 		logger.error(error);
 		res.status(400).send(
 			'Error while updating config, please check log file'
@@ -155,23 +186,35 @@ app.post('/notServiceConf', async (req, res) => {
 		return;
 	}
 });
+
+// Configure a device that is used for a box number
 app.post('/config-device', (req, res) => {
+	// Cancel button has been pressed return to homepage
 	if (req.body.cancel !== undefined) {
 		res.status(200);
 		res.redirect('/');
 		return;
 	}
 
+	// check if id has been given
+	if (req.body.id === undefined) {
+		// No device id has been entered
+		res.sendStatus(400);
+		return;
+	}
+
+	// Try getting device by given id
 	const device = MQTTService.Instance.getDeviceByID(req.body.id);
 	if (device === undefined) {
 		// Unexpected can't add new device from web
-		res.sendStatus(500);
+		res.sendStatus(404);
 		logger.warn(
 			`Can't configure device(${req.body.id}) because it has not been discoverd yet`
 		);
 		return;
 	}
 
+	// Delete button has been pressed clear box number configuration
 	if (req.body.delete !== undefined) {
 		device.boxNumber = undefined;
 		device.notificationBody = undefined;
@@ -179,14 +222,16 @@ app.post('/config-device', (req, res) => {
 		device.subscriber = [];
 		device.checkInterval = undefined;
 		device.lastEmptied = undefined;
-		device.history = [];
+		device.history.splice(0, device.history.length);
 
 		logger.info(
 			`device(${req.body.id}) as been deleted using the web interface`
 		);
 	} else {
+		// Convert boxNumber to Number
 		req.body.boxNumber = Number(req.body.boxNumber);
 		if (isNaN(req.body.boxNumber)) {
+			// Let user know that it can not be converted to a number
 			res.status(400).json({
 				...req.body,
 				error: 'boxNumber not a number',
@@ -202,13 +247,16 @@ app.post('/config-device', (req, res) => {
 		device.checkInterval = req.body.checkInterval;
 	}
 
+	// Apply changes to the device
 	MQTTService.Instance.updateDevice(device);
 
+	// Eveything went good return to homepage
 	res.status(200);
 	res.redirect('/');
 });
 //#endregion API
 
+// Start web service
 app.listen(PORT, () => {
 	logger.info(`Server is running at http://localhost:${PORT}`);
 });

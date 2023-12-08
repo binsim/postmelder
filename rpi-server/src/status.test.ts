@@ -1,19 +1,19 @@
 import { test, describe, expect } from '@jest/globals';
-import { IStateService, StateService } from './status';
+import { StateService } from './status';
 
 describe('Status', () => {
+	// Hide error message of the libraries init function
 	jest.spyOn(console, 'error').mockImplementation(() => {});
-	const states: IStateService = new StateService();
 
 	test('Status ok after start', () => {
-		expect(states.isOk).toBe(true);
+		expect(StateService.Instance.isOk).toBe(true);
 	});
 	test('externalError', () => {
-		states.mqttOnlineStateChanged(false);
-		expect(states.externalError).toBe(true);
-		expect(states.isOk).toBe(false);
-		states.mqttOnlineStateChanged(true);
-		expect(states.externalError).toBe(false);
-		expect(states.isOk).toBe(true);
+		StateService.Instance.mqttOnlineStateChanged(false);
+		expect(StateService.Instance.externalError).toBe(true);
+		expect(StateService.Instance.isOk).toBe(false);
+		StateService.Instance.mqttOnlineStateChanged(true);
+		expect(StateService.Instance.externalError).toBe(false);
+		expect(StateService.Instance.isOk).toBe(true);
 	});
 });

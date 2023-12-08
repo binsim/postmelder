@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { scheduleJob } from 'node-schedule';
 import { CheckInterval, HistoryType, IDevice } from './EspDevice';
-import { decrypt, encrypt } from './encrypt';
+import { HashData, decrypt } from './encrypt';
 import { logger } from './logging';
 
 export const DEFAULT_SMTP_PORT = 587;
@@ -11,21 +11,24 @@ const CONFIG_FILE = 'data/mail.json';
 
 interface INotificationConfig {
 	username: string;
-	password: { iv: string; data: string; authTag: string };
+	password: HashData;
 	host: string;
 	port?: number;
-	secure: boolean;
+	ssl: boolean;
 }
 export class NotificationService {
 	private static _instance: NotificationService;
 	private transporter: Transporter | undefined;
 	private conf: INotificationConfig | undefined;
+
+	// Devices will either join one of these arrays and will send a notification
+	// depending on the array or they will send a notification immediately
 	private _hourlyDevices: IDevice[] = [];
 	private _dailyDevices: IDevice[] = [];
 	private _weeklyDevices: IDevice[] = [];
 
 	private constructor() {
-		// TODO: Read config from file and save it to the transporter
+		// Read existing configuration from file
 		try {
 			const file = readFileSync(CONFIG_FILE);
 			if (file.buffer.byteLength <= 0) throw new Error('File is empty');
@@ -34,6 +37,7 @@ export class NotificationService {
 			if (!('transporter' in data))
 				throw new Error("mail.json has no attribute 'transporter'");
 
+			// Create transporter from file
 			this.updateConfig(data['transporter'], false);
 			logger.info('Read notification settings from file');
 		} catch (error) {
@@ -46,6 +50,8 @@ export class NotificationService {
 			else logger.error(error);
 		}
 
+		// Create jobs to be executed when their time elapsed
+		// devices will join arrays according to their configuration
 		scheduleJob('0 * * * *', () => {
 			logger.info('HOURLY CHECK TRIGGERED');
 			this.checkForSendingMessage(this._hourlyDevices);
@@ -70,21 +76,35 @@ export class NotificationService {
 		return this.conf;
 	}
 
+	/**
+	 *
+	 * @returns Current connection state
+	 */
 	isConnected() {
 		return new Promise((resolve, _) => {
 			if (this.transporter == undefined) {
 				resolve(false);
+				logger.warn('Transporter can not be connected if undefined');
 				return;
 			}
 
 			this.transporter.verify((err) => {
+				if (err) {
+					logger.warn(`Transporter is not connected due to ${err}`);
+				}
 				resolve(!err);
 			});
 		});
 	}
-	static testConfig(config: INotificationConfig) {
-		return new Promise((resolve, reject) => {
-			let options = this.getOptionsFromConfig(config);
+	/**
+	 * Validate configuration independent of applied configuration
+	 *
+	 * @param config Configuration to test
+	 * @returns returns true if configuration is valid
+	 */
+	static testConfig(config: INotificationConfig): Promise<boolean> {
+		return new Promise((resolve, _) => {
+			const options = this.getOptionsFromConfig(config);
 			let transporter = createTransport(options);
 
 			transporter.verify((err) => {
@@ -93,7 +113,13 @@ export class NotificationService {
 		});
 	}
 
+	/**
+	 * Adds a device to the notification service and listens to its events
+	 *
+	 * @param device Device to add
+	 */
 	addDevice(device: IDevice) {
+		// The handler, if online changed
 		const changeHandler = (status: boolean) => {
 			if (status && !device.messageAlreadySent) {
 				this.sendMessage(device).catch((err) => {
@@ -105,14 +131,17 @@ export class NotificationService {
 			let arr = [];
 			switch (interval) {
 				case 'immediately':
+					// Check if notification is waiting for being sent and send it
 					if (device.isOccupied && !device.messageAlreadySent)
 						this.sendMessage(device).catch((err) => {
 							logger.error(err);
 						});
 
+					// Append handler
 					device.on('onlineChanged', changeHandler);
 					break;
 
+				// Select array for the device to be added in
 				case 'daily':
 					arr = this._dailyDevices;
 					break;
@@ -126,14 +155,19 @@ export class NotificationService {
 
 			arr.push(device);
 		};
+		// execute function
 		addDeviceToArr(device.checkInterval!);
 
+		// execute function again, if value has changed after undoing previous
 		device.on('checkIntervalChanged', (oldVal, newVal) => {
 			let arr: IDevice[] = [];
 			switch (oldVal) {
 				case 'immediately':
+					// remove handler
 					device.off('onlineChanged', changeHandler);
 					break;
+
+				// Select array to remove device from
 				case 'daily':
 					arr = this._dailyDevices;
 					break;
@@ -145,13 +179,21 @@ export class NotificationService {
 					break;
 			}
 
+			// Remove device from array
 			let i = arr.indexOf(device);
 			if (i >= 0) arr.slice(i, 1);
 
+			// setting new interval value
 			addDeviceToArr(newVal);
 		});
 	}
 
+	/**
+	 * Executes a send message with appending 'Test: ' to the messages title
+	 *
+	 * @param device Device to send message from
+	 * @returns Returns the result of sending the message
+	 */
 	async sendTestMessage(device: IDevice) {
 		return await this.sendMessage(device, true);
 	}
@@ -160,10 +202,12 @@ export class NotificationService {
 		isTestMessage = false
 	): Promise<MailReturn> {
 		return new Promise(async (resolve, reject) => {
+			// To send a message, targets are necessary
 			if (device.subscriber!.length <= 0) {
 				reject(new Error('No target for message provided'));
 				return;
 			}
+			// A message also needs a sender
 			if (
 				this.conf?.username === undefined ||
 				this.conf.username.length <= 0
@@ -171,6 +215,7 @@ export class NotificationService {
 				reject(new Error("Could't get sender for the message"));
 				return;
 			}
+			// The transporter needs to be online in order to send a message
 			if (!(await this.isConnected())) {
 				reject(new Error('Transporter is not ok'));
 				return;
@@ -178,6 +223,7 @@ export class NotificationService {
 
 			//TODO: Handle rejected recipients
 			try {
+				// Send the message
 				const info: MailReturn = await this.transporter!.sendMail({
 					from: this.conf.username,
 					to: device.subscriber!.join(', '),
@@ -193,6 +239,7 @@ export class NotificationService {
 					),
 				});
 
+				// Log all rejected targets
 				if (info.rejected.length > 0) {
 					logger.warn(
 						`${
@@ -202,6 +249,7 @@ export class NotificationService {
 						)}]`
 					);
 				}
+				// Log all accepted targets
 				if (info.accepted.length > 0) {
 					logger.info(
 						`${
@@ -211,22 +259,32 @@ export class NotificationService {
 						)}]`
 					);
 				}
+				// Return for user information
 				resolve(info);
 			} catch (err) {
 				//TODO: Make Error more readable
 				reject(err);
 				return;
 			}
+			// set sent to be true, to not send a message again
 			if (!isTestMessage) device.messageAlreadySent = true;
 		});
 	}
 
+	/**
+	 * Updates the configuration and creates a transporter from it
+	 *
+	 * @param config New configuration
+	 * @param writeToFile Wether the configuration should be written to the config file
+	 */
 	updateConfig(config: INotificationConfig, writeToFile = true) {
+		// Create transporter from new configuration
 		this.transporter = createTransport(
 			NotificationService.getOptionsFromConfig(config)
 		);
 		this.conf = config;
 		if (writeToFile) {
+			// Create folder structure if it does not exist
 			if (!existsSync(CONFIG_FILE)) {
 				mkdirSync(
 					CONFIG_FILE.substring(0, CONFIG_FILE.lastIndexOf('/')),
@@ -234,34 +292,22 @@ export class NotificationService {
 				);
 			}
 
-			config.password = encrypt(
-				config.password.data,
-				config.password.iv !== undefined
-					? config.password.iv
-					: undefined
-			);
 			writeFileSync(CONFIG_FILE, JSON.stringify({ transporter: config }));
 			logger.info('Successfully update NotificationService config');
 		}
 	}
 
+	/**
+	 *
+	 * @param msg The message before replacing
+	 * @param device The device to get the information from
+	 * @returns The string with inserted values
+	 */
 	private static insertVariables(
 		msg: string | undefined,
 		device: IDevice
 	): string | undefined {
 		if (msg === undefined) return undefined;
-
-		function getHistory(history: HistoryType[]): string {
-			let HistoryString = '\n';
-			history?.forEach((el) => {
-				HistoryString +=
-					new Date(el.timeStamp).toLocaleString() +
-					': ' +
-					el.weight.toLocaleString() +
-					'g\n';
-			});
-			return HistoryString;
-		}
 		return msg
 			.replace(
 				new RegExp('{BOXNR}', 'g'),
@@ -269,7 +315,9 @@ export class NotificationService {
 			)
 			.replace(
 				new RegExp('{WEIGHT}', 'g'),
-				device.currentWeight?.toLocaleString() + 'g'
+				device.currentWeight
+					? device.currentWeight.toLocaleString() + 'g'
+					: '{WEIGHT:undefined}'
 			)
 			.replace(
 				new RegExp('{LASTEMPTIED}', 'g'),
@@ -277,9 +325,26 @@ export class NotificationService {
 					? new Date(device.lastEmptied).toLocaleString()
 					: '{LASTEMPTIED:undefined}'
 			)
-			.replace(new RegExp('{HISTORY}', 'g'), getHistory(device.history));
+			.replace(
+				new RegExp('{HISTORY}', 'g'),
+				device.history
+					? `\n${device.history
+							.map(
+								(el) =>
+									`${new Date(
+										el.timeStamp
+									).toLocaleString()}: ${el.weight.toLocaleString()}g`
+							)
+							.join('\n')}\n`
+					: '{HISTORY:undefined}'
+			);
 	}
 
+	/**
+	 * Checks array for a device to send a message
+	 *
+	 * @param devices The array
+	 */
 	private checkForSendingMessage(devices: IDevice[]) {
 		devices.forEach((device) => {
 			if (device.isOccupied && !device.messageAlreadySent) {
@@ -290,6 +355,9 @@ export class NotificationService {
 		});
 	}
 
+	/**
+	 * Converts config to SMTPTransport.Options
+	 */
 	private static getOptionsFromConfig(config: INotificationConfig) {
 		let data: SMTPTransport.Options = {
 			host: config.host,
@@ -300,7 +368,7 @@ export class NotificationService {
 			},
 		};
 
-		if (config.secure) {
+		if (config.ssl) {
 			data.tls = { ciphers: 'SSLv3' };
 			data.secure = false;
 		}

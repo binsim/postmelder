@@ -7,21 +7,32 @@ import { logger } from './logging';
 jest.useFakeTimers();
 
 describe('MQTTService', () => {
+	// publish and subscribe isn't working if not connected to mqtt broker and is not needed for testing
 	(MQTTService.Instance as any)._client = {
-		publish: function (topic: string, message: string) {},
-		subscribe: function (topic: string) {},
+		publish: function (_topic: string, _message: string) {},
+		subscribe: function (_topic: string) {},
 	} as MqttClient;
 
+	// ID that is used for executing following tests
 	const deviceID = 'ID:1234';
 
 	test('Connect new device', () => {
 		let newDevice: IDevice | undefined;
 
+		// Listen on event for the new device
 		MQTTService.Instance.on(
 			'deviceAdded',
 			(device) => (newDevice = device)
 		);
 
+		// Check if device has not been added yet
+		expect(
+			MQTTService.Instance.devices
+				.filter((device) => device.id === deviceID)
+				.at(0)
+		).toBe(undefined);
+
+		// Send mqtt message to add new device
 		(MQTTService.Instance as any).onMessageArrived(
 			'/devices',
 			Buffer.from(deviceID)
@@ -29,7 +40,9 @@ describe('MQTTService', () => {
 
 		jest.runAllTimers();
 
+		// Check event to be executed correctly
 		expect(newDevice?.id).toBe(deviceID);
+		// Check if device has been added to array
 		expect(MQTTService.Instance.devices.at(-1)?.id).toBe(deviceID);
 	});
 
@@ -38,10 +51,12 @@ describe('MQTTService', () => {
 
 		let isOnline = false;
 
+		// Listen to event
 		device?.on('onlineChanged', (value) => (isOnline = value));
+		// Sending mqtt message
 		(MQTTService.Instance as any).onMessageArrived(
 			`/${deviceID}/online`,
-			'online'
+			'connected'
 		);
 
 		expect(isOnline).toBe(true);
@@ -52,10 +67,12 @@ describe('MQTTService', () => {
 
 		let isOnline = true;
 
+		// Listen to event
 		device?.on('onlineChanged', (value) => (isOnline = value));
+		// Sending mqtt message
 		(MQTTService.Instance as any).onMessageArrived(
 			`/${deviceID}/online`,
-			'offline'
+			'disconnected'
 		);
 
 		expect(isOnline).toBe(false);
@@ -66,13 +83,15 @@ describe('MQTTService', () => {
 		// Execute this to trigger onOnlineChanged for wrong message
 		(MQTTService.Instance as any).onMessageArrived(
 			`/${deviceID}/online`,
-			'online'
+			'connected'
 		);
 
 		let isOnline = true;
 		logger.warn = jest.fn();
 
+		// Listen to event
 		device?.on('onlineChanged', (value) => (isOnline = value));
+		// Sending mqtt message
 		(MQTTService.Instance as any).onMessageArrived(
 			`/${deviceID}/online`,
 			'Wrong'
@@ -80,6 +99,7 @@ describe('MQTTService', () => {
 
 		expect(isOnline).toBe(false);
 		expect(device?.isOnline).toBe(false);
+		// This case should be logged to the user
 		expect(logger.warn).toBeCalled();
 	});
 
@@ -90,7 +110,9 @@ describe('MQTTService', () => {
 		let isOccupied = false;
 		expect(device?.isOccupied).toBe(false);
 
+		// Listen to event
 		device?.on('occupiedChanged', (value) => (isOccupied = value));
+		// Sending mqtt message
 		(MQTTService.Instance as any).onMessageArrived(
 			`/${deviceID}/currentWeight`,
 			testWeight
@@ -107,7 +129,9 @@ describe('MQTTService', () => {
 		let isOccupied = true;
 		expect(device?.isOccupied).toBe(true);
 
+		// Listen to event
 		device?.on('occupiedChanged', (value) => (isOccupied = value));
+		// Sending mqtt message
 		(MQTTService.Instance as any).onMessageArrived(
 			`/${deviceID}/currentWeight`,
 			0
@@ -119,35 +143,23 @@ describe('MQTTService', () => {
 		expect(device?.history.length).toBe(0);
 	});
 
-	// test('Device free message', () => {
-	// 	const device = service.getDeviceByID(deviceID);
-
-	// 	let isOccupied = true;
-
-	// 	device?.on('occupiedChanged', (value) => (isOccupied = value));
-	// 	(service as any).onMessageArrived(`/${deviceID}/status`, 'free');
-
-	// 	expect(isOccupied).toBe(false);
-	// 	expect(device?.isOccupied).toBe(false);
-	// });
-	// test('Wrong status Message', () => {
-	// 	const device = service.getDeviceByID(deviceID);
-
-	// 	let isOccupied = false;
-
-	// 	device?.on('occupiedChanged', (value) => (isOccupied = value));
-	// 	(service as any).onMessageArrived(`/${deviceID}/status`, 'Wrong');
-
-	// 	expect(isOccupied).toBe(true);
-	// 	expect(device?.isOccupied).toBe(true);
-	// });
-
-	afterAll(() => {
+	function removeTestDevice() {
+		// remove device from locally saved array
 		MQTTService.Instance.devices.splice(
 			MQTTService.Instance.devices.findIndex((i) => i.id === deviceID),
 			1
 		);
 
+		// remove device from config file
 		saveToFile(MQTTService.Instance.devices);
+	}
+
+	// Cleanup after executing all tests
+	afterAll(() => {
+		removeTestDevice();
+	});
+	// Remove test device incase it exists
+	beforeAll(() => {
+		removeTestDevice();
 	});
 });

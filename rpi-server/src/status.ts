@@ -11,6 +11,7 @@ export interface IStateService {
 	mqttOnlineStateChanged(isConnected: boolean): void;
 }
 export class StateService implements IStateService {
+	private static _instance: StateService;
 	private r_pin = 1;
 	private g_pin = 1;
 	private b_pin = 1;
@@ -18,7 +19,7 @@ export class StateService implements IStateService {
 	private deviceList: IDevice[] = [];
 	private _externalError = false;
 
-	constructor() {
+	private constructor() {
 		// TODO: Log warnings of this function
 		init({ close_on_exit: true, mapping: 'gpio' });
 
@@ -30,6 +31,10 @@ export class StateService implements IStateService {
 		this.updateColor();
 	}
 
+	public static get Instance(): StateService {
+		if (this._instance === undefined) this._instance = new StateService();
+		return this._instance;
+	}
 	get externalError() {
 		return this._externalError;
 	}
@@ -40,6 +45,11 @@ export class StateService implements IStateService {
 		return !this.externalError && !this.internalError;
 	}
 
+	/**
+	 * Adds listener func for displaying state of device
+	 *
+	 * @param device Device to add
+	 */
 	addDeviceListener(device: IDevice) {
 		device.on('onlineChanged', (value) => {
 			if (value) {
@@ -54,11 +64,20 @@ export class StateService implements IStateService {
 		});
 	}
 
+	/**
+	 * Execute this if mqtt online state changed
+	 * Will update colors depending on state
+	 *
+	 * @param isConnected Value of mqtt online state
+	 */
 	mqttOnlineStateChanged(isConnected: boolean) {
 		this._externalError = !isConnected;
 		this.updateColor();
 	}
 
+	/**
+	 * Update GPIO output depending on states
+	 */
 	private updateColor() {
 		write(this.r_pin, this.externalError ? HIGH : LOW);
 		write(this.g_pin, this.isOk ? HIGH : LOW);
