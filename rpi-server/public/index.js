@@ -205,8 +205,6 @@ function calibrate_stage_changed(stageChange) {
 
 	calibrate_stages.forEach((stage, i) => {
 		const display = i == current_calibrate_stage ? 'block' : 'none';
-
-		console.log({ stage, i, display });
 		stage.style.display = display;
 	});
 
