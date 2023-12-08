@@ -77,9 +77,10 @@ function configureDevice(device) {
 
 async function testMessage(e, deviceId) {
 	e.stopPropagation();
-	// Show loader
-	loader.style.display = 'none';
 	testmessage_response_dialog.showModal();
+
+	// Show loader
+	loader.style.display = 'block';
 
 	// Getting all elements
 	const accepted_destinations_ul = testmessage_response_dialog.querySelector(
