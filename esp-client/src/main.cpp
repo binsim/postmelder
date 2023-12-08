@@ -139,6 +139,7 @@ void loop()
 		reconnect();
 	}
 
+	// FIXME: It does not get detected when no scale is connected
 	if (scale.is_ready()) // check if scale is ready
 	{
 		static bool weightChange;			  // saves if weight changed above or below threshold inbetween two readings
@@ -353,6 +354,8 @@ void updateLEDs()
 		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
 		digitalWrite(G_LED_PIN, LOW);
 	}
+	Serial.print("Current State: ");
+	Serial.println((int)state, BIN);
 }
 
 void setStateOccupied(bool value)
