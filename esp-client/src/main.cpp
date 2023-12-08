@@ -44,7 +44,8 @@ bool isServerOnline = false;
 // Function declarations
 void updateLEDs();
 void setStateOccupied(bool value);
-void setStateError(bool value);
+void setStateErrorCommunication(bool value);
+void setStateErrorScale(bool value);
 void setStateInit(bool value);
 void callback(char *topic, byte *message, unsigned int length);
 void reconnect();
@@ -56,8 +57,9 @@ float readScale();
 	Bits: 		Func
 	0	:		INIT
 	1	:		OCCUPIED
-	2-6	:		reserver
-	7	: 		ERR
+	2-5	:		reserver
+	6	:		ERR_Scale
+	7	: 		ERR_Communication
 */
 char state = 0b000;
 
@@ -69,7 +71,7 @@ void setup()
 #endif
 
 	setStateOccupied(false);
-	setStateError(false);
+	setStateErrorCommunication(false);
 	setStateInit(true);
 
 	Serial.begin(115200); // Serial connection to PC
@@ -129,7 +131,7 @@ void loop()
 	{
 		if (!(state &= 1 << 0)) // state unequal Init
 		{
-			setStateError(true);
+			setStateErrorCommunication(true);
 		}
 	}
 	else
@@ -164,7 +166,8 @@ void loop()
 		}
 
 		if (!weightChange && !printed)
-		{									// if weight changed over threshold
+		{ // if weight changed over threshold
+			setStateErrorScale(false);
 			Serial.print("final weight: "); // print to serial monitor
 			Serial.print(weight);
 			Serial.println("g");
@@ -179,6 +182,7 @@ void loop()
 	else
 	{
 		// TODO: Fehler anzeigen
+		setStateErrorScale(true);
 	}
 
 	client.loop();
@@ -221,20 +225,19 @@ void reconnect()
 
 	if (!(state &= 1 << 0)) // state unequal Init
 	{
-		setStateError(true);
+		setStateErrorCommunication(true);
 	}
 
 	// TODO: Get MAC Address as ID
 	if (client.connect(MAC.c_str(), MQTT_USER, MQTT_PASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected"))
 	{
-		client.subscribe(("/" + MAC + "/#").c_str());
-		client.subscribe("/server/online");
-
+		client.subscribe(("/" + MAC + "/#").c_str(), 1);
+		client.subscribe("/server/online", 1);
 		// Sending device now available
 		client.publish("/devices", MAC.c_str());
 		client.publish(("/" + MAC + "/online").c_str(), "connected", true);
 		setStateInit(false);
-		setStateError(false);
+		setStateErrorCommunication(false);
 	}
 	else
 	{
@@ -324,7 +327,7 @@ float readScale()
 void updateLEDs()
 {
 	// Error
-	if (state & 1 << 7)
+	if ((state & 1 << 6) || (state & 1 << 7))
 	{
 		ledcWrite(CHANNEL_ROT, BLINKEN_EIN);
 		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
@@ -357,9 +360,14 @@ void setStateOccupied(bool value)
 	value ? state |= 1 << 1 : state &= ~(1 << 1); // Set/Reset Occupied Bit if value true/false
 }
 
-void setStateError(bool value)
+void setStateErrorCommunication(bool value)
 {
-	value ? state |= 1 << 7 : state &= ~(1 << 7); // Set/Reset Error Bit if value true/false
+	value ? state |= 1 << 7 : state &= ~(1 << 7); // Set/Reset Error Ser Bit if value true/false
+}
+
+void setStateErrorScale(bool value)
+{
+	value ? state |= 1 << 6 : state &= ~(1 << 6); // Set/Reset Error Scale Bit if value true/false
 }
 
 void setStateInit(bool value)
