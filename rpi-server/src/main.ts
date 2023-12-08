@@ -222,7 +222,7 @@ app.post('/config-device', (req, res) => {
 		device.subscriber = [];
 		device.checkInterval = undefined;
 		device.lastEmptied = undefined;
-		device.history = [];
+		device.history.splice(0, device.history.length);
 
 		logger.info(
 			`device(${req.body.id}) as been deleted using the web interface`
