@@ -25,6 +25,13 @@ const testmessage_response_dialog_close_btn =
 const box_details_dialog = document.querySelector('dialog.box-details');
 const box_details_dialog_close_btn =
 	box_details_dialog.querySelector('button#close');
+
+const calibrate_dialog = document.querySelector('dialog.calibrate');
+const calibrate_cancel_btn = calibrate_dialog.querySelector('button.cancel');
+const calibrate_stages = calibrate_dialog.querySelectorAll('section.stage');
+const calibrate_prev_button = calibrate_dialog.querySelector('button.prev');
+const calibrate_next_button = calibrate_dialog.querySelector('button.next');
+const calibrate_finish_button = calibrate_dialog.querySelector('button.finish');
 //#endregion Define element variables
 
 //#region DOM event listener
@@ -50,6 +57,23 @@ notification_port_checkbox.addEventListener('change', () => {
 	if (!notification_port_checkbox.checked) {
 		notification_port_input.value = DEFAULT_SMTP_PORT;
 	}
+});
+calibrate_cancel_btn.addEventListener('click', () => {
+	calibrate_dialog.close();
+	current_calibrate_device = undefined;
+	current_calibrate_stage = 0;
+});
+calibrate_prev_button.addEventListener('click', () => {
+	calibrate_stage_changed(-1);
+});
+calibrate_next_button.addEventListener('click', () => {
+	calibrate_stage_changed(+1);
+});
+calibrate_finish_button.addEventListener('click', () => {
+	// TODO: Handle finish
+	calibrate_dialog.close();
+	current_calibrate_device = undefined;
+	current_calibrate_stage = 0;
 });
 //#endregion DOM event listener
 
@@ -160,4 +184,48 @@ async function boxDetails(e, deviceId) {
 		history_ul.innerHTML = '';
 		history_h2.innerText = 'Postfach ist leer';
 	}
+}
+
+let current_calibrate_device = undefined;
+let current_calibrate_stage = 0;
+async function calibrateDevice(e, deviceId) {
+	e.stopPropagation();
+
+	const h1 = calibrate_dialog.querySelector('h1');
+	h1.innerText = 'Kalibrieren: ' + deviceId;
+
+	current_calibrate_device = deviceId;
+	current_calibrate_stage = 0;
+
+	calibrate_stage_changed(0);
+	calibrate_dialog.showModal();
+}
+function calibrate_stage_changed(stageChange) {
+	current_calibrate_stage += stageChange;
+
+	calibrate_stages.forEach((stage, i) => {
+		const display = i == current_calibrate_stage ? 'block' : 'none';
+
+		console.log({ stage, i, display });
+		stage.style.display = display;
+	});
+
+	const h2 = calibrate_dialog.querySelector('h2');
+
+	h2.innerText =
+		'Schritt ' +
+		((current_calibrate_stage ?? 0) + 1) +
+		' von ' +
+		calibrate_stages.length;
+
+	calibrate_prev_button.style.visibility =
+		current_calibrate_stage > 0 ? 'visible' : 'hidden';
+	calibrate_next_button.style.display =
+		current_calibrate_stage < calibrate_stages.length - 1
+			? 'inline'
+			: 'none';
+	calibrate_finish_button.style.display =
+		current_calibrate_stage == calibrate_stages.length - 1
+			? 'inline'
+			: 'none';
 }

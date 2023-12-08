@@ -11,6 +11,7 @@
 </header>
 
 <main>
+	<%- include('../partials/calibrateDialog')%>
 	<%- include('../partials/boxDetailsDialog') %>
 	<%- include('../partials/notificationServiceConfDialog') -%>
 	<%- include('../partials/testMessageResponseDialog')%>
@@ -30,7 +31,7 @@
 			<td><%= device.checkInterval %></td>
 			<td><%= device.subscriber?.join('; ') %></td>
 			<td>
-				<button onclick="window.location.href='/calibration?id=<%= device.id %>'">Kalibrieren</button>
+				<button onclick="calibrateDevice(event, '<%= device.id %>')"">Kalibrieren</button>
 				<button onclick="boxDetails(event, '<%= device.id %>')">Details</button>
 				<button onclick="testMessage(event, '<%= device.id %>')">Testnachricht</button>
 			</td>
