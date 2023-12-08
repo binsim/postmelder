@@ -45,6 +45,10 @@ char state = 0b000;
 
 void setup()
 {
+	setStateOccupied(false);
+	setStateError(false);
+	setStateInit(true);
+
 	Serial.begin(115200);
 
 	pinMode(R_LED_PIN, OUTPUT);
@@ -52,8 +56,8 @@ void setup()
 	pinMode(B_LED_PIN, OUTPUT);
 	// blinken lassen
 
-	ledcSetup(0, 10, 12); // PWM für Blaue LED
-	ledcSetup(1, 10, 12); // PWM für Rote LED
+	ledcSetup(0, 1, 12); // PWM für Blaue LED
+	ledcSetup(1, 1, 12); // PWM für Rote LED
 	ledcAttachPin(B_LED_PIN, 0);
 	ledcAttachPin(R_LED_PIN, 1);
 
@@ -64,14 +68,11 @@ void setup()
 
 	client.setServer(mqttServer, 1883);
 	client.setCallback(callback);
-
-	setStateOccupied(false);
-	setStateError(false);
-	setStateInit(true);
 }
 
 void loop()
 {
+	// TODO: Optimieren wann welche Status LED blinkt
 	if (WiFi.status() != WL_CONNECTED)
 	{
 		if (!(state &= 1 << 0)) // state unequal Init
@@ -160,12 +161,14 @@ void updateLEDs()
 		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
 		digitalWrite(G_LED_PIN, LOW);
 	}
+	// Setup
 	else if (state & 1 << 0)
 	{
 		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
 		ledcWrite(CHANNEL_BLAU, BLINKEN_EIN);
 		digitalWrite(G_LED_PIN, LOW);
 	}
+	// Occupied
 	else if (state & 1 << 1)
 	{
 		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
