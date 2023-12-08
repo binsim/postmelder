@@ -199,7 +199,10 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 
 		if (device) {
 			try {
-				(device as Device)._onMessageArrived(topic, payload);
+				(device as Device)._onMessageArrived(
+					topic.split('/').slice(2).join('/'),
+					payload
+				);
 				return;
 			} catch (error) {
 				// Only return if message handled correctly

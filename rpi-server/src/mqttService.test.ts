@@ -80,11 +80,7 @@ describe('MQTTService', () => {
 	});
 	test('Wrong online Message', () => {
 		const device = MQTTService.Instance.getDeviceByID(deviceID);
-		// Execute this to trigger onOnlineChanged for wrong message
-		(MQTTService.Instance as any).onMessageArrived(
-			`/${deviceID}/online`,
-			'connected'
-		);
+		(device as any).isOnline = true;
 
 		let isOnline = true;
 		logger.warn = jest.fn();
@@ -141,6 +137,33 @@ describe('MQTTService', () => {
 		expect(device?.isOccupied).toBe(false);
 		expect(device?.currentWeight).toBe(0);
 		expect(device?.history.length).toBe(0);
+	});
+
+	test('Calibrate first step', async () => {
+		const device = MQTTService.Instance.getDeviceByID(deviceID);
+		(device as any).isOnline = true;
+
+		const func = device?.calcScaleOffset();
+
+		(MQTTService.Instance as any).onMessageArrived(
+			`/${deviceID}/calibration/scaleOffset`,
+			Buffer.from('20')
+		);
+
+		expect(await func).toBe(20);
+	});
+	test('Calibrate second step', async () => {
+		const device = MQTTService.Instance.getDeviceByID(deviceID);
+		(device as any).isOnline = true;
+
+		const func = device?.calcScaleWeight(100);
+
+		(MQTTService.Instance as any).onMessageArrived(
+			`/${deviceID}/calibration/scaleValue`,
+			Buffer.from('200')
+		);
+
+		expect(await func).toBe(200);
 	});
 
 	function removeTestDevice() {
