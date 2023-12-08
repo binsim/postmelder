@@ -354,8 +354,8 @@ void updateLEDs()
 		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
 		digitalWrite(G_LED_PIN, LOW);
 	}
-	Serial.print("Current State: ");
-	Serial.println((int)state, BIN);
+	// Serial.print("Current State: ");
+	// Serial.println((int)state, HEX);
 }
 
 void setStateOccupied(bool value)
