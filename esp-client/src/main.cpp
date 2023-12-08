@@ -70,8 +70,6 @@ void setup()
 	nvs_flash_init();  // initialise nvs-partition
 #endif
 
-	setStateOccupied(false);
-	setStateErrorCommunication(false);
 	setStateInit(true);
 
 	Serial.begin(115200); // Serial connection to PC
@@ -167,8 +165,7 @@ void loop()
 		}
 
 		if (!weightChange && !printed)
-		{ // if weight changed over threshold
-			setStateErrorScale(false);
+		{									// if weight changed over threshold
 			Serial.print("final weight: "); // print to serial monitor
 			Serial.print(weight);
 			Serial.println("g");
@@ -183,7 +180,6 @@ void loop()
 	else
 	{
 		// TODO: Fehler anzeigen
-		setStateErrorScale(true);
 	}
 
 	client.loop();
@@ -375,5 +371,5 @@ void setStateErrorScale(bool value)
 
 void setStateInit(bool value)
 {
-	value ? state |= 1 << 0 : state &= ~(1 << 0); // Set/Reset Init Bit if value true/false
+	value ? state = 1 << 0 : state &= ~(1 << 0); // Set/Reset Init Bit if value true/false
 }
