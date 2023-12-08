@@ -22,8 +22,7 @@ PubSubClient client(wiFiClient);
 HX711 scale;			 // scale object
 Preferences preferences; // preferences object
 
-float weight = 0;	   // scale measurement variables
-bool weightChange = 0; // saves whether weight has changed
+float weight = 0; // scale measurement variables
 
 float scaleValue;	   // calibrated scale values -> Flash
 long scaleOffset;	   // -> Flash
@@ -58,38 +57,32 @@ void setup()
 	preferences.begin("postmelder", false); // start preferences
 
 	scale.begin(SCALE_DATA_PIN, SCALE_CLOCK_PIN); // start scale
-	while (!scale.is_ready())
-	{ // wait until scale started
-		delay(100);
-	}
 
 	scaleInitialised = preferences.getBool("initialised"); // read flag from flash
 
 	if (!scaleInitialised)
-	{ // calibrate and write values to flash if not initialised
-
-		Serial.println("not yet initialised, starting calibration");
-		calibrateScale();
-
-		scaleInitialised = true;
-
-		preferences.putFloat("scaleValue", scaleValue); // save values to flash
-		preferences.putLong("scaleOffset", scaleOffset);
-		preferences.putBool("initialised", scaleInitialised);
+	{ // if scale not initialised
+		Serial.println("not yet initialised, start manual calibration!");
 	}
 	else
 	{ // read values from flash if already initialised
 		Serial.println("already initialised, loading values...");
 
-		scaleValue = preferences.getFloat("scaleValue", 0);
+		scaleValue = preferences.getFloat("scaleValue", 0); // read values from flash
 		scaleOffset = preferences.getLong("scaleOffset", 0);
+
+		Serial.print("ScaleValue: "); // print them to the serial monitor
+		Serial.print(scaleValue);
+		Serial.print(", ScaleOffset: ");
+		Serial.println(scaleOffset);
 
 		scale.set_offset(scaleOffset); // set scale values
 		scale.set_scale(scaleValue);
+
+		weight = readScale(); // inital reading to discard any weird measurements
 	}
 
 	preferences.end(); // close preferences
-	weight = readScale();
 }
 
 void loop()
@@ -103,14 +96,17 @@ void loop()
 		reconnect();
 	}
 
-	if (scale.is_ready())
-	{ // check if scale is ready
-		static float previousWeight = weight;
+	if (scale.is_ready()) // check if scale is ready
+	{
+		static bool weightChange; //saves if weight changed above or below threshold inbetween two readings
+		static bool printed; //saves wether settled weight has already been sent via MQTT and printed to the serial monitor
+		static float previousWeight = weight; //saves the value of the previous measurement
 		weight = readScale();
 
-		while (weight >= previousWeight + SCALE_THRESHOLD || weight <= previousWeight - SCALE_THRESHOLD)
-		{ // if weight changed above or below threshold loop until weight has settled in
+		if (weight >= previousWeight + SCALE_THRESHOLD || weight <= previousWeight - SCALE_THRESHOLD)
+		{ // if weight changed above or below threshold
 			weightChange = true;
+			printed = false;
 
 			Serial.print("Change detected, weight: "); // print to serial monitor
 			Serial.print(weight, 1);
@@ -121,8 +117,12 @@ void loop()
 
 			delay(250);
 		}
+		else
+		{
+			weightChange = false;
+		}
 
-		if (weightChange)
+		if (!weightChange && !printed)
 		{									// if weight changed over threshold
 			Serial.print("final weight: "); // print to serial monitor
 			Serial.print(weight);
@@ -131,7 +131,13 @@ void loop()
 			weightChange = false; // reset change
 
 			sendWeight(weight); // send weight over MQTT
+
+			printed = true;
 		}
+	}
+	else
+	{
+		// TODO: Fehler anzeigen
 	}
 
 	client.loop();
@@ -167,7 +173,6 @@ void callback(char *topic, byte *message, unsigned int length)
 }
 void reconnect()
 {
-
 	if (client.connected())
 		return;
 
@@ -194,7 +199,7 @@ void sendWeight(float weight)
 }
 
 void calibrateScale()
-{ // calibrates the scale with a user dialog via the serial monitor
+{ // calibrates the scale with a user dialog via the serial monitor and saves the results to flash
 	Serial.println("\n\nCalibration\n===========");
 	Serial.println("remove all weight from the scale");
 	//  flush Serial input
@@ -245,6 +250,16 @@ void calibrateScale()
 	scale.set_scale(scaleValue);
 
 	Serial.println("\n\n");
+
+	preferences.begin("postmelder", false); // start preferences
+
+	scaleInitialised = true;
+
+	preferences.putFloat("scaleValue", scaleValue); // save values to flash
+	preferences.putLong("scaleOffset", scaleOffset);
+	preferences.putBool("scaleInitialised", scaleInitialised);
+
+	preferences.end(); // close preferences
 }
 
 float readScale()
