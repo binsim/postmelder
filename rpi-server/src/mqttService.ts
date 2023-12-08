@@ -33,6 +33,8 @@ export declare interface IMQTTService {
 	 */
 	updateDevice(device: IDevice): void;
 
+	publish(topic: string, payload: Buffer): void;
+
 	// Subscribing to events
 	// No need to unsubscribe to thous events, because they are called once in main
 	on(event: 'connectionChanged', callback: (value: boolean) => void): void;
@@ -148,6 +150,9 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 		}
 
 		this.saveToFile();
+	}
+	public publish(topic: string, payload: Buffer): void {
+		this.client.publish(topic, payload);
 	}
 
 	private saveToFile() {

@@ -58,10 +58,17 @@ notification_port_checkbox.addEventListener('change', () => {
 		notification_port_input.value = DEFAULT_SMTP_PORT;
 	}
 });
-calibrate_cancel_btn.addEventListener('click', () => {
+calibrate_cancel_btn.addEventListener('click', async () => {
 	calibrate_dialog.close();
 	current_calibrate_device = undefined;
 	current_calibrate_stage = 0;
+	const response = await fetch(
+		`/calibrate/${current_calibrate_device}/cancel`,
+		{
+			method: 'POST',
+		}
+	);
+	console.log(response);
 });
 calibrate_prev_button.addEventListener('click', () => {
 	calibrate_stage_changed(-1);

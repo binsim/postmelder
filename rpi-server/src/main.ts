@@ -297,6 +297,9 @@ app.post('/calibrate/:clientID/:stage', async (req, res) => {
 
 				res.send(200);
 				return;
+			case 'cancel':
+				device.cancelCalibration();
+				break;
 			default:
 				res.status(404).send('Invalid stage');
 				return;

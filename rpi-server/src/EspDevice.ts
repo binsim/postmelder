@@ -101,6 +101,7 @@ export declare interface IDevice extends JSON_Device {
 	calcScaleOffset(): Promise<number>;
 	calcScaleWeight(weight: number): Promise<number>;
 	applyScaleCalibration(scaleOffset: number, scaleValue: number): void;
+	cancelCalibration(): void;
 }
 
 export class Device extends EventEmitter implements IDevice {
@@ -268,22 +269,42 @@ export class Device extends EventEmitter implements IDevice {
 	}
 	public calcScaleOffset(): Promise<number> {
 		return new Promise((resolve, reject) => {
+			if (!this.isOnline) {
+				reject('Device is offline');
+				return;
+			}
+
 			const timeout = setTimeout(() => {
 				reject(
 					'Timeout for calcScaleOffset elapsed, response took to long'
 				);
 			}, 5_000);
-			// TODO: Implement
+
+			MQTTService.Instance.publish(
+				`/${this._device.id}/command/CalcOffset`,
+				Buffer.from('')
+			);
+
+			// TODO: resolve with response then clear timeout
 		});
 	}
 	public calcScaleWeight(weight: number): Promise<number> {
 		return new Promise((resolve, reject) => {
+			if (!this.isOnline) {
+				reject('Device is offline');
+				return;
+			}
 			const timeout = setTimeout(() => {
 				reject(
 					'Timeout for calcScaleOffset elapsed, response took to long'
 				);
 			}, 5_000);
-			// TODO: Implement
+
+			MQTTService.Instance.publish(
+				`/${this._device.id}/command/CalibrateScale`,
+				Buffer.from(weight.toString())
+			);
+			// TODO: resolve with response then clear timeout
 		});
 	}
 
@@ -291,7 +312,21 @@ export class Device extends EventEmitter implements IDevice {
 		scaleOffset: number,
 		scaleValue: number
 	): void {
-		// TODO: Implement
+		MQTTService.Instance.publish(
+			`/${this._device.id}/command/ApplyCalibration`,
+			Buffer.from(
+				JSON.stringify({
+					offset: scaleOffset,
+					value: scaleValue,
+				})
+			)
+		);
+	}
+	public cancelCalibration(): void {
+		MQTTService.Instance.publish(
+			`/${this._device.id}/command/CancelCalibration`,
+			Buffer.from('')
+		);
 	}
 }
 
