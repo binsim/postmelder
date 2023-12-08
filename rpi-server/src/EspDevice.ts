@@ -122,10 +122,10 @@ export class Device extends EventEmitter implements IDevice {
 			case 'online':
 				// Update the online
 				switch (payload.toString()) {
-					case 'online':
+					case 'connected':
 						this.isOnline = true;
 						break;
-					case 'offline':
+					case 'disconnected':
 						this.isOnline = false;
 						break;
 					default:
