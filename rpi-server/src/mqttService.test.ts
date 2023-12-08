@@ -56,7 +56,7 @@ describe('MQTTService', () => {
 		// Sending mqtt message
 		(MQTTService.Instance as any).onMessageArrived(
 			`/${deviceID}/online`,
-			'online'
+			'connected'
 		);
 
 		expect(isOnline).toBe(true);
@@ -72,7 +72,7 @@ describe('MQTTService', () => {
 		// Sending mqtt message
 		(MQTTService.Instance as any).onMessageArrived(
 			`/${deviceID}/online`,
-			'offline'
+			'disconnected'
 		);
 
 		expect(isOnline).toBe(false);
@@ -83,7 +83,7 @@ describe('MQTTService', () => {
 		// Execute this to trigger onOnlineChanged for wrong message
 		(MQTTService.Instance as any).onMessageArrived(
 			`/${deviceID}/online`,
-			'online'
+			'connected'
 		);
 
 		let isOnline = true;
