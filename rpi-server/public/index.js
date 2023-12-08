@@ -79,9 +79,6 @@ async function testMessage(e, deviceId) {
 	e.stopPropagation();
 	testmessage_response_dialog.showModal();
 
-	// Show loader
-	loader.style.display = 'block';
-
 	// Getting all elements
 	const accepted_destinations_ul = testmessage_response_dialog.querySelector(
 		'.accepted-destinations ul'
@@ -90,6 +87,9 @@ async function testMessage(e, deviceId) {
 		'.rejected-destinations ul'
 	);
 	const loader = testmessage_response_dialog.querySelector('.loader-wrapper');
+
+	// Show loader
+	loader.style.display = 'block';
 
 	// Clear elements
 	accepted_destinations_ul.innerHTML = '';
