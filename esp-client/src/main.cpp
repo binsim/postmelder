@@ -2,45 +2,49 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <HX711.h>
+#include <Preferences.h>
+#include <nvs_flash.h>
 
-#define threshhold 2.0 // value in grams, above or below which no change will be reported
+#define WIPE false // if true the nvs partition and all saved values will be wiped
 
 #define SSID "Postmelder-Wifi"
 IPAddress mqttServer(10, 42, 0, 1);
-#define MQTTUSER "MQTTBroker"
-#define MQTTPASS "postmelder"
+#define MQTT_USER "MQTTBroker"
+#define MQTT_PASS "postmelder"
+
+#define SCALE_THRESHOLD 2.0 // value in grams, above or below which no change will be reported in grams
+#define SCALE_DATA_PIN 32
+#define SCALE_CLOCK_PIN 33
 
 WiFiClient wiFiClient;
 PubSubClient client(wiFiClient);
 
-HX711 scale; // scale object
-
-uint8_t dataPin = 32; // scale pins
-uint8_t clockPin = 33;
-
-uint32_t start, stop;
-volatile float f;
+HX711 scale;			 // scale object
+Preferences preferences; // preferences object
 
 float weight = 0; // scale measurement variables
-float previousweight = 0;
 
-bool weightchange = 0; //saves whether weight has changed
+float scaleValue;	   // calibrated scale values -> Flash
+long scaleOffset;	   // -> Flash
+bool scaleInitialised; // saves whether the scale has already been calibrated-> Flash
 
-float scaleValue; // calibrated scale values -> Flash
-long scaleOffset; // -> Flash
-
-void callback(char *topic, byte *message, unsigned int length);
-void reconnect();
-void sendWeight(float weight);
 const String MAC = WiFi.macAddress();
 bool connectedWithNode = false;
 bool isServerOnline = false;
 
+void callback(char *topic, byte *message, unsigned int length);
+void reconnect();
+void sendWeight(float weight);
 void calibrateScale();
 float readScale();
 
 void setup()
 {
+#if WIPE			   // if wipe is defined
+	nvs_flash_erase(); // format nvs-partition
+	nvs_flash_init();  // initialise nvs-partition
+#endif
+
 	Serial.begin(115200); // Serial connection to PC
 
 	// Connect to WiFi
@@ -50,15 +54,35 @@ void setup()
 
 	client.setServer(mqttServer, 1883);
 	client.setCallback(callback);
+	preferences.begin("postmelder", false); // start preferences
 
-	scale.begin(dataPin, clockPin); // start scale
-	while (!scale.is_ready())
-	{ // wait until scale started
-		delay(100);
+	scale.begin(SCALE_DATA_PIN, SCALE_CLOCK_PIN); // start scale
+
+	scaleInitialised = preferences.getBool("initialised"); // read flag from flash
+
+	if (!scaleInitialised)
+	{ // if scale not initialised
+		Serial.println("not yet initialised, start manual calibration!");
+	}
+	else
+	{ // read values from flash if already initialised
+		Serial.println("already initialised, loading values...");
+
+		scaleValue = preferences.getFloat("scaleValue", 0); // read values from flash
+		scaleOffset = preferences.getLong("scaleOffset", 0);
+
+		Serial.print("ScaleValue: "); // print them to the serial monitor
+		Serial.print(scaleValue);
+		Serial.print(", ScaleOffset: ");
+		Serial.println(scaleOffset);
+
+		scale.set_offset(scaleOffset); // set scale values
+		scale.set_scale(scaleValue);
+
+		weight = readScale(); // inital reading to discard any weird measurements
 	}
 
-	calibrateScale(); // only if not initialised
-	weight = readScale();
+	preferences.end(); // close preferences
 }
 
 void loop()
@@ -72,35 +96,48 @@ void loop()
 		reconnect();
 	}
 
-	if (scale.is_ready())
-	{ // check if scale is ready
-		previousweight = weight;
+	if (scale.is_ready()) // check if scale is ready
+	{
+		static bool weightChange; //saves if weight changed above or below threshold inbetween two readings
+		static bool printed; //saves wether settled weight has already been sent via MQTT and printed to the serial monitor
+		static float previousWeight = weight; //saves the value of the previous measurement
 		weight = readScale();
 
-		while (weight >= previousweight + threshhold || weight <= previousweight - threshhold)
-		{ // if weight changed above or below threshhold loop until weight has settled in
-			weightchange = true;
+		if (weight >= previousWeight + SCALE_THRESHOLD || weight <= previousWeight - SCALE_THRESHOLD)
+		{ // if weight changed above or below threshold
+			weightChange = true;
+			printed = false;
 
 			Serial.print("Change detected, weight: "); // print to serial monitor
 			Serial.print(weight, 1);
 			Serial.println("g");
 
-			previousweight = weight;
+			previousWeight = weight;
 			weight = readScale();
 
 			delay(250);
 		}
+		else
+		{
+			weightChange = false;
+		}
 
-		if (weightchange)
-		{									// if weight changed over threshhold
+		if (!weightChange && !printed)
+		{									// if weight changed over threshold
 			Serial.print("final weight: "); // print to serial monitor
 			Serial.print(weight);
 			Serial.println("g");
 
-			weightchange = false; // reset change
+			weightChange = false; // reset change
 
 			sendWeight(weight); // send weight over MQTT
+
+			printed = true;
 		}
+	}
+	else
+	{
+		// TODO: Fehler anzeigen
 	}
 
 	client.loop();
@@ -136,12 +173,11 @@ void callback(char *topic, byte *message, unsigned int length)
 }
 void reconnect()
 {
-
 	if (client.connected())
 		return;
 
 	// TODO: Get MAC Address as ID
-	if (client.connect(MAC.c_str(), MQTTUSER, MQTTPASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected"))
+	if (client.connect(MAC.c_str(), MQTT_USER, MQTT_PASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected"))
 	{
 		client.subscribe(("/" + MAC + "/#").c_str());
 		client.subscribe("/server/online");
@@ -163,7 +199,7 @@ void sendWeight(float weight)
 }
 
 void calibrateScale()
-{ // calibrates the scale with a user dialog via the serial monitor
+{ // calibrates the scale with a user dialog via the serial monitor and saves the results to flash
 	Serial.println("\n\nCalibration\n===========");
 	Serial.println("remove all weight from the scale");
 	//  flush Serial input
@@ -214,6 +250,16 @@ void calibrateScale()
 	scale.set_scale(scaleValue);
 
 	Serial.println("\n\n");
+
+	preferences.begin("postmelder", false); // start preferences
+
+	scaleInitialised = true;
+
+	preferences.putFloat("scaleValue", scaleValue); // save values to flash
+	preferences.putLong("scaleOffset", scaleOffset);
+	preferences.putBool("scaleInitialised", scaleInitialised);
+
+	preferences.end(); // close preferences
 }
 
 float readScale()
