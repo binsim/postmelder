@@ -3,7 +3,7 @@ import { config } from 'dotenv';
 import { MQTTService } from './mqttService';
 import { StateService } from './status';
 import { DEFAULT_SMTP_PORT, NotificationService } from './notification';
-import { CheckIntervals, IDevice } from './EspDevice';
+import { CheckIntervals } from './EspDevice';
 import { encrypt } from './encrypt';
 import { logger } from './logging';
 
@@ -64,7 +64,7 @@ app.get('/', (_: Request, res: Response) => {
 	});
 });
 
-// Send a test message to the specified subscribers and responde to the user
+// Send a test message to the specified subscribers and respond to the user
 app.get('/testMessage', async (req, res) => {
 	// Check if id is correctly given
 	if (typeof req.query.id !== 'string') {
@@ -143,7 +143,7 @@ app.post('/notServiceConf', async (req, res) => {
 		}
 	} else {
 		if (!req.body.password) {
-			// A password is neccessary for a user
+			// A password is necessary for a user
 			// do not update
 			res.status(400).send(
 				'No password given, please add a password for current user'
@@ -250,7 +250,7 @@ app.post('/config-device', (req, res) => {
 	// Apply changes to the device
 	MQTTService.Instance.updateDevice(device);
 
-	// Eveything went good return to homepage
+	// Everything went good return to homepage
 	res.status(200);
 	res.redirect('/');
 });
