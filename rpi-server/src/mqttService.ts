@@ -134,9 +134,7 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 			.at(0);
 	}
 	updateDevice(device: IDevice) {
-		const index = this._devices.findIndex(
-			(device) => device.id === device.id
-		);
+		const index = this._devices.findIndex((d) => d.id === device.id);
 
 		// TODO: Check if item should be added or throw an error if it does not exist
 		if (index < 0) {
