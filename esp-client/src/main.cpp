@@ -7,36 +7,61 @@
 
 #define WIPE false // if true the nvs partition and all saved values will be wiped
 
+// ----------------------- MQTT-Server Settings ---------------------  //
 #define SSID "Postmelder-Wifi"
 IPAddress mqttServer(10, 42, 0, 1);
 #define MQTT_USER "MQTTBroker"
 #define MQTT_PASS "postmelder"
 
+// -----------------------  SCALE Settings --------------------------  //
 #define SCALE_THRESHOLD 2.0 // value in grams, above or below which no change will be reported in grams
 #define SCALE_DATA_PIN 32
 #define SCALE_CLOCK_PIN 33
 
+// ------------------------------- Pinout ----------------------------  //
+#define R_LED_PIN 0
+#define G_LED_PIN 2
+#define B_LED_PIN 15
+
+// ------------------------- PMW Blinking ------------------------------ //
+#define CHANNEL_BLAU 0
+#define CHANNEL_ROT 1
+#define BLINKEN_EIN 100
+#define BLINKEN_AUS 0
+
 WiFiClient wiFiClient;
 PubSubClient client(wiFiClient);
-
 HX711 scale;			 // scale object
 Preferences preferences; // preferences object
-
-float weight = 0; // scale measurement variables
-
-float scaleValue;	   // calibrated scale values -> Flash
-long scaleOffset;	   // -> Flash
-bool scaleInitialised; // saves whether the scale has already been calibrated-> Flash
-
+float weight = 0;		 // scale measurement variables
+float scaleValue;		 // calibrated scale values -> Flash
+long scaleOffset;		 // -> Flash
+bool scaleInitialised;	 // saves whether the scale has already been calibrated-> Flash
 const String MAC = WiFi.macAddress();
 bool connectedWithNode = false;
 bool isServerOnline = false;
 
+// Function declarations
+void updateLEDs();
+void setStateOccupied(bool value);
+void setStateErrorCommunication(bool value);
+void setStateErrorScale(bool value);
+void setStateInit(bool value);
 void callback(char *topic, byte *message, unsigned int length);
 void reconnect();
 void sendWeight(float weight);
 void calibrateScale();
 float readScale();
+
+/*
+	Bits: 		Func
+	0	:		INIT
+	1	:		OCCUPIED
+	2-5	:		reserver
+	6	:		ERR_Scale
+	7	: 		ERR_Communication
+*/
+char state = 0b000;
 
 void setup()
 {
@@ -45,7 +70,19 @@ void setup()
 	nvs_flash_init();  // initialise nvs-partition
 #endif
 
+	setStateInit(true);
+
 	Serial.begin(115200); // Serial connection to PC
+
+	pinMode(R_LED_PIN, OUTPUT);
+	pinMode(G_LED_PIN, OUTPUT);
+	pinMode(B_LED_PIN, OUTPUT);
+	// blinken lassen
+
+	ledcSetup(0, 1, 12); // PWM für Blaue LED
+	ledcSetup(1, 1, 12); // PWM für Rote LED
+	ledcAttachPin(B_LED_PIN, 0);
+	ledcAttachPin(R_LED_PIN, 1);
 
 	// Connect to WiFi
 	Serial.print("Connect to: ");
@@ -87,20 +124,25 @@ void setup()
 
 void loop()
 {
+	// TODO: Optimieren wann welche Status LED blinkt
 	if (WiFi.status() != WL_CONNECTED)
 	{
-		// TODO: Show Output RGB
+		if (!(state &= 1 << 0)) // state unequal Init
+		{
+			setStateErrorCommunication(true);
+		}
 	}
 	else
 	{
 		reconnect();
 	}
 
+	// FIXME: It does not get detected when no scale is connected
 	if (scale.is_ready()) // check if scale is ready
 	{
-		static bool weightChange; //saves if weight changed above or below threshold inbetween two readings
-		static bool printed; //saves wether settled weight has already been sent via MQTT and printed to the serial monitor
-		static float previousWeight = weight; //saves the value of the previous measurement
+		static bool weightChange;			  // saves if weight changed above or below threshold inbetween two readings
+		static bool printed;				  // saves wether settled weight has already been sent via MQTT and printed to the serial monitor
+		static float previousWeight = weight; // saves the value of the previous measurement
 		weight = readScale();
 
 		if (weight >= previousWeight + SCALE_THRESHOLD || weight <= previousWeight - SCALE_THRESHOLD)
@@ -141,6 +183,8 @@ void loop()
 	}
 
 	client.loop();
+
+	updateLEDs();
 }
 void callback(char *topic, byte *message, unsigned int length)
 {
@@ -176,15 +220,21 @@ void reconnect()
 	if (client.connected())
 		return;
 
+	if (!(state &= 1 << 0)) // state unequal Init
+	{
+		setStateErrorCommunication(true);
+	}
+
 	// TODO: Get MAC Address as ID
 	if (client.connect(MAC.c_str(), MQTT_USER, MQTT_PASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected"))
 	{
-		client.subscribe(("/" + MAC + "/#").c_str());
-		client.subscribe("/server/online");
-
+		client.subscribe(("/" + MAC + "/#").c_str(), 1);
+		client.subscribe("/server/online", 1);
 		// Sending device now available
 		client.publish("/devices", MAC.c_str());
 		client.publish(("/" + MAC + "/online").c_str(), "connected", true);
+		setStateInit(false);
+		setStateErrorCommunication(false);
 	}
 	else
 	{
@@ -269,4 +319,57 @@ float readScale()
 	value = scale.get_units(20); // mean of 20 measurements
 
 	return value;
+}
+
+void updateLEDs()
+{
+	// Error
+	if ((state & 1 << 6) || (state & 1 << 7))
+	{
+		ledcWrite(CHANNEL_ROT, BLINKEN_EIN);
+		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
+		digitalWrite(G_LED_PIN, LOW);
+	}
+	// Setup
+	else if (state & 1 << 0)
+	{
+		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
+		ledcWrite(CHANNEL_BLAU, BLINKEN_EIN);
+		digitalWrite(G_LED_PIN, LOW);
+	}
+	// Occupied
+	else if (state & 1 << 1)
+	{
+		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
+		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
+		digitalWrite(G_LED_PIN, HIGH);
+	}
+	else
+	{
+		ledcWrite(CHANNEL_ROT, BLINKEN_AUS);
+		ledcWrite(CHANNEL_BLAU, BLINKEN_AUS);
+		digitalWrite(G_LED_PIN, LOW);
+	}
+	// Serial.print("Current State: ");
+	// Serial.println((int)state, HEX);
+}
+
+void setStateOccupied(bool value)
+{
+	value ? state |= 1 << 1 : state &= ~(1 << 1); // Set/Reset Occupied Bit if value true/false
+}
+
+void setStateErrorCommunication(bool value)
+{
+	value ? state |= 1 << 7 : state &= ~(1 << 7); // Set/Reset Error Ser Bit if value true/false
+}
+
+void setStateErrorScale(bool value)
+{
+	value ? state |= 1 << 6 : state &= ~(1 << 6); // Set/Reset Error Scale Bit if value true/false
+}
+
+void setStateInit(bool value)
+{
+	value ? state = 1 << 0 : state &= ~(1 << 0); // Set/Reset Init Bit if value true/false
 }
