@@ -58,44 +58,70 @@ notification_port_checkbox.addEventListener('change', () => {
 	}
 });
 calibrate_cancel_btn.addEventListener('click', async (e) => {
+	// Prevent form to be submitted
 	e.preventDefault();
+
+	// Close dialog and reset saved values
 	calibrate_dialog.close();
 	current_calibrate_device = undefined;
 	current_calibrate_stage = 0;
+	current_calibrate_url = undefined;
+
+	// Send abort to esp-client
 	const response = await fetch(
 		`/calibrate/${current_calibrate_device}/cancel`,
 		{
 			method: 'POST',
 		}
 	);
-	console.log(response);
+
+	// Check if successfully aborted
+	if (response.status !== 200) {
+		alert(await response.text());
+	}
+
+	// Nothing must be done
 });
 calibrate_prev_button.addEventListener('click', (e) => {
+	// Prevent form to be submitted
 	e.preventDefault();
+
+	// Return to previous stage
 	calibrate_stage_changed(-1);
 });
 calibrate_next_button.addEventListener('click', async (e) => {
+	// Prevent form to be submitted
 	e.preventDefault();
+
 	let response;
-	// TODO: catch errors
 	switch (current_calibrate_stage) {
 		case 0:
+			// Make fetch request to execute calibrate on esp-device
 			response = await fetch(current_calibrate_url, {
 				method: 'POST',
 			});
+
+			// Check if execution was successful
 			if (response.status != 200) {
+				// Notify user for this error
 				alert(await response.text());
 				return;
 			}
+			// Get data from response and write it to hidden input
 			const scaleOffset = Number((await response.json()).scaleOffset);
 			if (isNaN(scaleOffset)) {
 				alert('Response invalid');
 				return;
 			}
 			const scaleOffset_input = calibrate_dialog('input#scale-offset');
+			if (scaleValue_input === undefined) {
+				alert('Unexpected error');
+				return;
+			}
 			scaleOffset_input.value = scaleOffset;
 			break;
 		case 1:
+			// Make fetch request to execute calibration with specified weight
 			response = await fetch(current_calibrate_url, {
 				method: 'POST',
 				headers: {
@@ -107,17 +133,24 @@ calibrate_next_button.addEventListener('click', async (e) => {
 						.value,
 				}),
 			});
+			// Check if execution was successful
 			if (response.status != 200) {
+				// Notify user for this error
 				alert(await response.text());
 				return;
 			}
 
+			// Get data from response and write to hidden input
 			const scaleValue = Number((await response.json()).scaleValue);
 			if (isNaN(scaleValue)) {
 				alert('Response invalid');
 				return;
 			}
 			const scaleValue_input = calibrate_dialog('input#scale-value');
+			if (scaleValue_input === undefined) {
+				alert('Unexpected error');
+				return;
+			}
 			scaleValue_input.value = scaleValue;
 			break;
 	}
@@ -240,6 +273,7 @@ let current_calibrate_url = undefined;
 async function calibrateDevice(e, deviceId) {
 	e.stopPropagation();
 
+	// Show witch esp-device gets calibrated
 	const h1 = calibrate_dialog.querySelector('h1');
 	h1.innerText = 'Kalibrieren: ' + deviceId;
 
@@ -247,22 +281,28 @@ async function calibrateDevice(e, deviceId) {
 	current_calibrate_stage = 0;
 
 	calibrate_stage_changed(0);
+
+	// Show calibrate dialog
 	calibrate_dialog.showModal();
 }
 function calibrate_stage_changed(stageChange) {
+	// update to new calibration stage
 	current_calibrate_stage += stageChange;
 
+	// Show new active stage in dialog
 	calibrate_stages.forEach((stage, i) => {
 		const display = i == current_calibrate_stage ? 'block' : 'none';
 		stage.style.display = display;
 	});
 
+	// Update html for new stage
 	const h2 = calibrate_dialog.querySelector('h2');
 	const form = calibrate_dialog.querySelector('form');
 	const finish_button = calibrate_dialog.querySelector(
 		'form button[type="submit"]'
 	);
 
+	// Update ui for new stage
 	h2.innerText =
 		'Schritt ' +
 		((current_calibrate_stage ?? 0) + 1) +
