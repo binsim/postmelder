@@ -272,13 +272,12 @@ app.post('/calibrate/:clientID/:stage', async (req, res) => {
 				return;
 			}
 			case '1': {
-				if (isNaN(Number(req.body.weight))) {
-					res.sendStatus(400);
+				const weight = Number(req.body.weight);
+				if (isNaN(weight) || weight <= 0) {
+					res.status(400).send('weight is not correctly defined');
 					return;
 				}
-				const scaleValue = await device.calcScaleWeight(
-					Number(req.body.weight)
-				);
+				const scaleValue = await device.calcScaleWeight(weight);
 				res.status(200).json({
 					scaleValue,
 				});
@@ -292,7 +291,7 @@ app.post('/calibrate/:clientID/:stage', async (req, res) => {
 				// Validate data for being a valid number
 				if (isNaN(scaleOffset) || isNaN(scaleValue)) {
 					// Send error to user
-					res.send(400).send('Offset or Value is invalid');
+					res.status(400).send('Offset or Value is invalid');
 					return;
 				}
 				// Send data to device to apply it
@@ -315,7 +314,7 @@ app.post('/calibrate/:clientID/:stage', async (req, res) => {
 		}
 	} catch (error) {
 		logger.error(error);
-		res.sendStatus(500);
+		res.status(500).send(error);
 	}
 });
 //#endregion API

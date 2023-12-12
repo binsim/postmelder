@@ -97,7 +97,11 @@ calibrate_next_button.addEventListener('click', async (e) => {
 						.value,
 				}),
 			});
-			console.log(response);
+			if (response.status != 200) {
+				alert(await response.text());
+				return;
+			}
+
 			// TODO: save response data
 			break;
 	}
