@@ -83,7 +83,17 @@ calibrate_next_button.addEventListener('click', async (e) => {
 			response = await fetch(current_calibrate_url, {
 				method: 'POST',
 			});
-			console.log(response);
+			if (response.status != 200) {
+				alert(await response.text());
+				return;
+			}
+			const scaleOffset = Number((await response.json()).scaleOffset);
+			if (isNaN(scaleOffset)) {
+				alert('Response invalid');
+				return;
+			}
+			const scaleOffset_input = calibrate_dialog('input#scale-offset');
+			scaleOffset_input.value = scaleOffset;
 			break;
 		case 1:
 			response = await fetch(current_calibrate_url, {
@@ -102,7 +112,13 @@ calibrate_next_button.addEventListener('click', async (e) => {
 				return;
 			}
 
-			// TODO: save response data
+			const scaleValue = Number((await response.json()).scaleValue);
+			if (isNaN(scaleValue)) {
+				alert('Response invalid');
+				return;
+			}
+			const scaleValue_input = calibrate_dialog('input#scale-value');
+			scaleValue_input.value = scaleValue;
 			break;
 	}
 	calibrate_stage_changed(+1);
