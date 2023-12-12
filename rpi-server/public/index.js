@@ -31,7 +31,6 @@ const calibrate_cancel_btn = calibrate_dialog.querySelector('button.cancel');
 const calibrate_stages = calibrate_dialog.querySelectorAll('section.stage');
 const calibrate_prev_button = calibrate_dialog.querySelector('button.prev');
 const calibrate_next_button = calibrate_dialog.querySelector('button.next');
-const calibrate_finish_button = calibrate_dialog.querySelector('button.finish');
 //#endregion Define element variables
 
 //#region DOM event listener
@@ -58,7 +57,8 @@ notification_port_checkbox.addEventListener('change', () => {
 		notification_port_input.value = DEFAULT_SMTP_PORT;
 	}
 });
-calibrate_cancel_btn.addEventListener('click', async () => {
+calibrate_cancel_btn.addEventListener('click', async (e) => {
+	e.preventDefault();
 	calibrate_dialog.close();
 	current_calibrate_device = undefined;
 	current_calibrate_stage = 0;
@@ -70,71 +70,38 @@ calibrate_cancel_btn.addEventListener('click', async () => {
 	);
 	console.log(response);
 });
-calibrate_prev_button.addEventListener('click', () => {
+calibrate_prev_button.addEventListener('click', (e) => {
+	e.preventDefault();
 	calibrate_stage_changed(-1);
 });
-calibrate_next_button.addEventListener('click', async () => {
+calibrate_next_button.addEventListener('click', async (e) => {
+	e.preventDefault();
 	let response;
 	// TODO: catch errors
 	switch (current_calibrate_stage) {
 		case 0:
-			response = await fetch(
-				`/calibrate/${current_calibrate_device}/${current_calibrate_stage}`,
-				{
-					method: 'POST',
-				}
-			);
+			response = await fetch(current_calibrate_url, {
+				method: 'POST',
+			});
 			console.log(response);
 			break;
 		case 1:
-			response = await fetch(
-				`/calibrate/${current_calibrate_device}/${current_calibrate_stage}`,
-				{
-					method: 'POST',
-					headers: {
-						Accept: 'application/json',
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({
-						weight: calibrate_dialog.querySelector('input#weight')
-							.value,
-					}),
-				}
-			);
-			console.log(response);
-			// TODO: save response data
-			break;
-		case 2:
-			response = await fetch(
-				`/calibrate/${current_calibrate_device}/${current_calibrate_stage}`,
-				{
-					method: 'POST',
-					headers: {
-						Accept: 'application/json',
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({
-						scaleOffset:
-							calibrate_dialog.querySelector(
-								'input#scale-offset'
-							),
-						scaleValue:
-							calibrate_dialog.querySelector('input#scale-value')
-								.value,
-					}),
-				}
-			);
+			response = await fetch(current_calibrate_url, {
+				method: 'POST',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					weight: calibrate_dialog.querySelector('input#weight')
+						.value,
+				}),
+			});
 			console.log(response);
 			// TODO: save response data
 			break;
 	}
 	calibrate_stage_changed(+1);
-});
-calibrate_finish_button.addEventListener('click', () => {
-	// TODO: Handle finish
-	calibrate_dialog.close();
-	current_calibrate_device = undefined;
-	current_calibrate_stage = 0;
 });
 //#endregion DOM event listener
 
@@ -249,6 +216,7 @@ async function boxDetails(e, deviceId) {
 
 let current_calibrate_device = undefined;
 let current_calibrate_stage = 0;
+let current_calibrate_url = undefined;
 async function calibrateDevice(e, deviceId) {
 	e.stopPropagation();
 
@@ -270,6 +238,10 @@ function calibrate_stage_changed(stageChange) {
 	});
 
 	const h2 = calibrate_dialog.querySelector('h2');
+	const form = calibrate_dialog.querySelector('form');
+	const finish_button = calibrate_dialog.querySelector(
+		'form button[type="submit"]'
+	);
 
 	h2.innerText =
 		'Schritt ' +
@@ -283,8 +255,11 @@ function calibrate_stage_changed(stageChange) {
 		current_calibrate_stage < calibrate_stages.length - 1
 			? 'inline'
 			: 'none';
-	calibrate_finish_button.style.display =
+	finish_button.style.display =
 		current_calibrate_stage == calibrate_stages.length - 1
 			? 'inline'
 			: 'none';
+
+	current_calibrate_url = `/calibrate/${current_calibrate_device}/${current_calibrate_stage}`;
+	form.action = current_calibrate_url;
 }

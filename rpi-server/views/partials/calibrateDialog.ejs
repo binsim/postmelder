@@ -22,16 +22,18 @@
 			anzuwenden, drücken Sie 'Anwenden'
 		</p>
 	</section>
-	<div>
-		<input type="hidden" name="scale-offset" id="scale-offset" />
-		<input type="hidden" name="scale-value" id="scale-value" />
-	</div>
-	<div>
-		<button class="cancel">Abbrechen</button>
-		<div style="float: right">
-			<button class="prev">Zurück</button>
-			<button class="next">Weiter</button>
-			<button class="finish">Anwenden</button>
+	<form action="" method="post">
+		<div>
+			<input type="hidden" name="scale-offset" id="scale-offset" />
+			<input type="hidden" name="scale-value" id="scale-value" />
 		</div>
-	</div>
+		<div>
+			<button class="cancel">Abbrechen</button>
+			<div style="float: right">
+				<button class="prev">Zurück</button>
+				<button class="next">Weiter</button>
+				<button type="submit">Anwenden</button>
+			</div>
+		</div>
+	</form>
 </dialog>

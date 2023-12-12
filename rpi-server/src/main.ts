@@ -264,13 +264,14 @@ app.post('/calibrate/:clientID/:stage', async (req, res) => {
 
 	try {
 		switch (req.params.stage) {
-			case '0':
+			case '0': {
 				const scaleOffset = await device.calcScaleOffset();
 				res.status(200).json({
 					scaleOffset,
 				});
 				return;
-			case '1':
+			}
+			case '1': {
 				if (isNaN(Number(req.body.weight))) {
 					res.sendStatus(400);
 					return;
@@ -282,25 +283,33 @@ app.post('/calibrate/:clientID/:stage', async (req, res) => {
 					scaleValue,
 				});
 				return;
-			case '2':
-				if (
-					isNaN(Number(req.body.scaleOffset)) ||
-					isNaN(Number(req.body.scaleValue))
-				) {
-					res.sendStatus(400);
+			}
+			case '2': {
+				// Get configuration data from form
+				const scaleOffset = Number(req.body['scale-offset']);
+				const scaleValue = Number(req.body['scale-value']);
+
+				// Validate data for being a valid number
+				if (isNaN(scaleOffset) || isNaN(scaleValue)) {
+					// Send error to user
+					res.send(400).send('Offset or Value is invalid');
 					return;
 				}
-				device.applyScaleCalibration(
-					Number(req.body.scaleOffset),
-					Number(req.body.scaleValue)
-				);
+				// Send data to device to apply it
+				device.applyScaleCalibration(scaleOffset, scaleValue);
 
-				res.send(200);
+				// Return to homepage
+				res.redirect('/');
+
+				// TODO: Check if applying was successfully and notify user
 				return;
+			}
 			case 'cancel':
+				// Send message to client to cancel calibration
 				device.cancelCalibration();
 				break;
 			default:
+				// Notify user that entered stage is not valid
 				res.status(404).send('Invalid stage');
 				return;
 		}
