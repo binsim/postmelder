@@ -116,7 +116,7 @@ calibrate_next_button.addEventListener('click', async (e) => {
 			}
 			const scaleOffset_input =
 				calibrate_dialog.querySelector('input#scale-offset');
-			if (scaleValue_input === undefined) {
+			if (scaleOffset_input === undefined) {
 				alert('Unexpected error');
 				return;
 			}
