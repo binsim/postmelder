@@ -3,7 +3,7 @@
 #include <PubSubClient.h>
 #include <HX711.h>
 #include <Preferences.h>
-// #include <nvs_flash.h>
+#include <nvs_flash.h>
 
 #include "configuration.h"
 #include "state.h"
@@ -38,6 +38,9 @@ void loadScaleValues();
 
 void setup()
 {
+	Serial.begin(115200); // Serial connection to PC
+	delay(100);
+	Serial.println("###################################  STARTUP ################################");
 	state.setupLEDs();
 	state.setState(States::INIT, true);
 
@@ -45,8 +48,6 @@ void setup()
 	nvs_flash_erase(); // format nvs-partition
 	nvs_flash_init();  // initialise nvs-partition
 #endif
-
-	Serial.begin(115200); // Serial connection to PC
 
 	// Connect to WiFi
 	Serial.print("Connect to: ");
@@ -81,10 +82,20 @@ void setup()
 	}
 
 	preferences.end(); // close preferences
+	Serial.println("###################################  Setup Done!!! ################################");
 }
 
 void loop()
 {
+	static byte init_counter = 0;
+	if (state.isInit())
+	{
+		init_counter++;
+		if (init_counter > 3)
+		{
+			state.setState(States::INIT, false);
+		}
+	}
 	// TODO: Optimieren wann welche Status LED blinkt
 	if (WiFi.status() != WL_CONNECTED)
 	{
@@ -176,6 +187,7 @@ void callback(char *topic, byte *message, unsigned int length)
 	{
 		scaleOffset = calibrateScaleOffset();
 		client.publish(("/" + MAC + "/calibration/scaleOffset").c_str(), String(scaleOffset, 2).c_str());
+		Serial.print("CalcOffset Message sent");
 	}
 	else if (topicStr == "/" + MAC + "/command/CalibrateScale")
 	{
@@ -250,7 +262,6 @@ float calibrateScaleFactor(unsigned int grams) // calculates the scale conversio
 {
 	Serial.println("calculating scale conversion factor...");
 
-	grams *= 10;
 	scale.calibrate_scale(grams, 20);
 	scaleValue = scale.get_scale();
 
@@ -275,7 +286,7 @@ void saveScaleValues() // saves the current scale values to flash
 
 	preferences.putFloat("scaleValue", scaleValue); // save values to flash
 	preferences.putLong("scaleOffset", scaleOffset);
-	preferences.putBool("scaleInitialised", scaleInitialised);
+	preferences.putBool("initialised", scaleInitialised);
 
 	preferences.end(); // close preferences
 }
