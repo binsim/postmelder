@@ -31,6 +31,11 @@ void sendWeight(float weight);
 void calibrateScale();
 float readScale();
 
+void calibrateScaleOffset();
+void calibrateScaleFactor(unsigned int grams);
+void saveScaleValues();
+void loadScaleValues();
+
 void setup()
 {
 	state.setupLEDs();
@@ -50,6 +55,7 @@ void setup()
 
 	client.setServer(mqttServer, 1883);
 	client.setCallback(callback);
+
 	preferences.begin("postmelder", false); // start preferences
 
 	scale.begin(SCALE_DATA_PIN, SCALE_CLOCK_PIN); // start scale
@@ -64,16 +70,12 @@ void setup()
 	{ // read values from flash if already initialised
 		Serial.println("already initialised, loading values...");
 
-		scaleValue = preferences.getFloat("scaleValue", 0); // read values from flash
-		scaleOffset = preferences.getLong("scaleOffset", 0);
+		loadScaleValues(); // load values from flash
 
 		Serial.print("ScaleValue: "); // print them to the serial monitor
 		Serial.print(scaleValue);
 		Serial.print(", ScaleOffset: ");
 		Serial.println(scaleOffset);
-
-		scale.set_offset(scaleOffset); // set scale values
-		scale.set_scale(scaleValue);
 
 		weight = readScale(); // inital reading to discard any weird measurements
 	}
@@ -206,19 +208,17 @@ void sendWeight(float weight)
 	client.publish(("/" + MAC + "/currentWeight").c_str(), String(weight, 1).c_str(), true);
 }
 
-void calibrateScale()
-{ // calibrates the scale with a user dialog via the serial monitor and saves the results to flash
-	Serial.println("\n\nCalibration\n===========");
-	Serial.println("remove all weight from the scale");
-	//  flush Serial input
-	while (Serial.available())
-		Serial.read();
+float readScale()
+{ // reads the scale
+	float value = 0;
 
-	Serial.println("and press enter, 'New Line' has to be activated in the serial monitor"
-				   "\n");
-	while (Serial.available() == 0)
-		;
+	value = scale.get_units(20); // mean of 20 measurements
 
+	return value;
+}
+
+void calibrateScaleOffset() // tares the scale when no weight is present
+{
 	Serial.println("calculating scaleOffset");
 	scale.tare(20); // mean of 20 measurements
 	scaleOffset = scale.get_offset();
@@ -227,41 +227,35 @@ void calibrateScale()
 	Serial.println(scaleOffset);
 	Serial.println();
 
-	Serial.println("place known weight on scale");
-	//  flush Serial input
-	while (Serial.available())
-		Serial.read();
+	// TODO: send via MQTT
+}
 
-	Serial.println("type in the weight in whole grams and press enter");
-	uint32_t weight = 0;
-	while (Serial.peek() != '\n')
-	{
-		if (Serial.available())
-		{
-			char ch = Serial.read();
-			if (isdigit(ch))
-			{
-				weight *= 10;
-				weight = weight + (ch - '0');
-			}
-		}
-	}
+void calibrateScaleFactor(unsigned int grams) // calculates the scale conversion factor using a known weight in whole grams
+{
+	Serial.println("calculating scale conversion factor...");
 
-	Serial.print("WEIGHT: ");
-	Serial.println(weight);
-	scale.calibrate_scale(weight, 20);
-
+	grams *= 10;
+	scale.calibrate_scale(grams, 20);
 	scaleValue = scale.get_scale();
 
-	Serial.println(scaleValue, 6);
-	scale.set_offset(scaleOffset); // set scale values
-	scale.set_scale(scaleValue);
+	Serial.print("conversion factor: "); // print result to serial monitor
+	Serial.println(scaleValue);
 
-	Serial.println("\n\n");
+	// TODO: send via MQTT
+}
 
+void saveScaleValues() // saves the current scale values to flash
+{
 	preferences.begin("postmelder", false); // start preferences
 
-	scaleInitialised = true;
+	if (scaleValue != 0 && scaleOffset != 0) // check if both scale parameters have been set
+	{
+		scaleInitialised = true; // set initialised-flag
+	}
+	else
+	{
+		scaleInitialised = false;
+	}
 
 	preferences.putFloat("scaleValue", scaleValue); // save values to flash
 	preferences.putLong("scaleOffset", scaleOffset);
@@ -270,11 +264,15 @@ void calibrateScale()
 	preferences.end(); // close preferences
 }
 
-float readScale()
-{ // reads the scale
-	float value = 0;
+void loadScaleValues()
+{											// loads and applies the scale values saved in flash
+	preferences.begin("postmelder", false); // start preferences
 
-	value = scale.get_units(20); // mean of 20 measurements
+	scaleValue = preferences.getFloat("scaleValue", 0); // read values from flash
+	scaleOffset = preferences.getLong("scaleOffset", 0);
 
-	return value;
+	scale.set_offset(scaleOffset); // set scale values
+	scale.set_scale(scaleValue);
+
+	preferences.end(); // close preferences
 }
