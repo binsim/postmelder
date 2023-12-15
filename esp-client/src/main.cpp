@@ -87,16 +87,6 @@ void setup()
 
 void loop()
 {
-	static byte init_counter = 0;
-	if (state.isInit())
-	{
-		init_counter++;
-		if (init_counter > 3)
-		{
-			state.setState(States::INIT, false);
-		}
-	}
-	// TODO: Optimieren wann welche Status LED blinkt
 	if (WiFi.status() != WL_CONNECTED)
 	{
 		if (!state.isInit()) // state unequal Init
