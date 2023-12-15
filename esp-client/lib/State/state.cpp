@@ -125,7 +125,14 @@ void State::loop()
 
 void State::updateLEDs()
 {
-	if (this->isError())
+	if (this->isInit())
+	{
+		Serial.print("In Init");
+		ledcWrite(R_LEDC_CHANEL, LEDC_OFF_DUTY);
+		ledcWrite(B_LEDC_CHANEL, LEDC_ON_DUTY);
+		digitalWrite(G_LED_PIN, LOW);
+	}
+	else if (this->isError())
 	{
 		Serial.print("In Error");
 		ledcWrite(R_LEDC_CHANEL, LEDC_ON_DUTY);

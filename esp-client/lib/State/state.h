@@ -18,10 +18,10 @@ public:
 	void setupLEDs();
 
 	void setState(States state, bool isActive);
-	bool isInit();
 	void loop();
 
 private:
+	bool isInit();
 	bool isError();
 	bool isCommunicationError();
 	bool isScaleError();
