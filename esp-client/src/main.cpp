@@ -101,6 +101,8 @@ void loop()
 	// FIXME: It does not get detected when no scale is connected
 	if (scale.is_ready()) // check if scale is ready
 	{
+		Serial.println("scale is ready!");
+
 		static bool weightChange;			  // saves if weight changed above or below threshold inbetween two readings
 		static bool printed;				  // saves wether settled weight has already been sent via MQTT and printed to the serial monitor
 		static float previousWeight = weight; // saves the value of the previous measurement
@@ -137,10 +139,6 @@ void loop()
 
 			printed = true;
 		}
-	}
-	else
-	{
-		// TODO: Fehler anzeigen
 	}
 
 	client.loop();

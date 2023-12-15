@@ -123,7 +123,11 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 				retain: true,
 			});
 
-			// TODO: Contact already added devices
+			// Contact already added devices
+			this.devices.forEach((device) => {
+				this.client.subscribe(`/${device.id}/#`);
+				logger.info(`Subscribing to '/${device.id}/#`);
+			});
 		});
 		this._client.on('message', (topic: string, payload: Buffer) =>
 			this.onMessageArrived(topic, payload)

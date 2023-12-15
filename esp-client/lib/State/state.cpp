@@ -107,5 +107,4 @@ void State::updateLEDs()
 		ledcWrite(B_LEDC_CHANEL, LEDC_OFF_DUTY);
 		digitalWrite(G_LED_PIN, LOW);
 	}
-	this->updateLEDs();
 }
