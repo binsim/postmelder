@@ -31,8 +31,8 @@ void sendWeight(float weight);
 void calibrateScale();
 float readScale();
 
-void calibrateScaleOffset();
-void calibrateScaleFactor(unsigned int grams);
+float calibrateScaleOffset();
+float calibrateScaleFactor(unsigned int grams);
 void saveScaleValues();
 void loadScaleValues();
 
@@ -172,6 +172,24 @@ void callback(char *topic, byte *message, unsigned int length)
 			return;
 		isServerOnline = messageTemp == "connected";
 	}
+	else if (topicStr == "/" + MAC + "/command/CalcOffset")
+	{
+		scaleOffset = calibrateScaleOffset();
+		client.publish(("/" + MAC + "/calibration/scaleOffset").c_str(), String(scaleOffset, 2).c_str());
+	}
+	else if (topicStr == "/" + MAC + "/command/CalibrateScale")
+	{
+		scaleValue = calibrateScaleFactor(atoi(messageTemp.c_str()));
+		client.publish(("/" + MAC + "/calibration/scaleValue").c_str(), String(scaleValue, 2).c_str());
+	}
+	else if (topicStr == "/" + MAC + "/command/ApplyCalibration")
+	{
+		saveScaleValues();
+	}
+	else if (topicStr == "/" + MAC + "/command/CancelCalibration")
+	{
+		loadScaleValues();
+	}
 }
 void reconnect()
 {
@@ -215,7 +233,7 @@ float readScale()
 	return value;
 }
 
-void calibrateScaleOffset() // tares the scale when no weight is present
+float calibrateScaleOffset() // tares the scale when no weight is present
 {
 	Serial.println("calculating scaleOffset");
 	scale.tare(20); // mean of 20 measurements
@@ -225,10 +243,10 @@ void calibrateScaleOffset() // tares the scale when no weight is present
 	Serial.println(scaleOffset);
 	Serial.println();
 
-	// TODO: send via MQTT
+	return scaleOffset;
 }
 
-void calibrateScaleFactor(unsigned int grams) // calculates the scale conversion factor using a known weight in whole grams
+float calibrateScaleFactor(unsigned int grams) // calculates the scale conversion factor using a known weight in whole grams
 {
 	Serial.println("calculating scale conversion factor...");
 
@@ -239,7 +257,7 @@ void calibrateScaleFactor(unsigned int grams) // calculates the scale conversion
 	Serial.print("conversion factor: "); // print result to serial monitor
 	Serial.println(scaleValue);
 
-	// TODO: send via MQTT
+	return scaleValue;
 }
 
 void saveScaleValues() // saves the current scale values to flash
