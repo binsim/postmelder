@@ -23,5 +23,6 @@
 		"**/.factorypath": true,
 		".pio": true
 	},
-	"explorerExclude.backup": {}
+	"explorerExclude.backup": {},
+	"cSpell.words": ["ledc"]
 }
