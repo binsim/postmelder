@@ -137,6 +137,12 @@ export class Device extends EventEmitter implements IDevice {
 			case 'online':
 				// Update the online
 				switch (payload.toString()) {
+					case '': // Register Device topic sent form server
+					case 'command/CancelCalibration':
+					case 'command/CalcOffset':
+					case 'command/CalibrateScale':
+					case 'command/ApplyCalibration':
+						break;
 					case 'connected':
 						this.isOnline = true;
 						break;
