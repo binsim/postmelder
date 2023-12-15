@@ -1,5 +1,10 @@
 #include "state.h"
 
+void State::init()
+{
+	this->setupLEDs();
+	this->setState(States::INIT, true);
+}
 void State::setupLEDs()
 {
 	pinMode(R_LED_PIN, OUTPUT);

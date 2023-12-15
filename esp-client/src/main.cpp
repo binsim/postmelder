@@ -41,8 +41,7 @@ void setup()
 	Serial.begin(115200); // Serial connection to PC
 	delay(100);
 	Serial.println("###################################  STARTUP ################################");
-	state.setupLEDs();
-	state.setState(States::INIT, true);
+	state.init();
 
 #ifdef WIPE			   // if wipe is defined
 	nvs_flash_erase(); // format nvs-partition
@@ -204,8 +203,6 @@ void reconnect()
 	if (client.connected())
 		return;
 
-	state.setState(States::COMMUNICATION_ERR, true);
-
 	// TODO: Get MAC Address as ID
 	if (client.connect(MAC.c_str(), MQTT_USER, MQTT_PASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected"))
 	{
@@ -217,6 +214,8 @@ void reconnect()
 	}
 	else
 	{
+		state.setState(States::COMMUNICATION_ERR, true);
+
 		Serial.print("failed, rc=");
 		Serial.println(client.state());
 		delay(1000);
