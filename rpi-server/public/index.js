@@ -148,7 +148,8 @@ calibrate_next_button.addEventListener('click', async (e) => {
 				alert('Response invalid');
 				return;
 			}
-			const scaleValue_input = calibrate_dialog('input#scale-value');
+			const scaleValue_input =
+				calibrate_dialog.querySelector('input#scale-value');
 			if (scaleValue_input === undefined) {
 				alert('Unexpected error');
 				return;
