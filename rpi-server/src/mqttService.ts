@@ -33,6 +33,8 @@ export declare interface IMQTTService {
 	 */
 	updateDevice(device: IDevice): void;
 
+	publish(topic: string, payload: Buffer): void;
+
 	// Subscribing to events
 	// No need to unsubscribe to thous events, because they are called once in main
 	on(event: 'connectionChanged', callback: (value: boolean) => void): void;
@@ -121,7 +123,12 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 				retain: true,
 			});
 
-			// TODO: Contact already added devices
+			// Contact already added devices
+			this.devices.forEach((device) => {
+				this.client.subscribe(`/${device.id}/#`);
+				logger.info(`Subscribing to '/${device.id}/#`);
+				this.emit('deviceAdded', device);
+			});
 		});
 		this._client.on('message', (topic: string, payload: Buffer) =>
 			this.onMessageArrived(topic, payload)
@@ -148,6 +155,9 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 		}
 
 		this.saveToFile();
+	}
+	public publish(topic: string, payload: Buffer): void {
+		this.client.publish(topic, payload);
 	}
 
 	private saveToFile() {
@@ -194,7 +204,10 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 
 		if (device) {
 			try {
-				(device as Device)._onMessageArrived(topic, payload);
+				(device as Device)._onMessageArrived(
+					topic.split('/').slice(2).join('/'),
+					payload
+				);
 				return;
 			} catch (error) {
 				// Only return if message handled correctly

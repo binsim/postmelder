@@ -3,7 +3,7 @@
 #include <PubSubClient.h>
 #include <HX711.h>
 #include <Preferences.h>
-// #include <nvs_flash.h>
+#include <nvs_flash.h>
 
 #include "configuration.h"
 #include "state.h"
@@ -31,8 +31,16 @@ void sendWeight(float weight);
 void calibrateScale();
 float readScale();
 
+float calibrateScaleOffset();
+float calibrateScaleFactor(unsigned int grams);
+void saveScaleValues();
+void loadScaleValues();
+
 void setup()
 {
+	Serial.begin(115200); // Serial connection to PC
+	delay(100);
+	Serial.println("###################################  STARTUP ################################");
 	state.setupLEDs();
 	state.setState(States::INIT, true);
 
@@ -41,8 +49,6 @@ void setup()
 	nvs_flash_init();  // initialise nvs-partition
 #endif
 
-	Serial.begin(115200); // Serial connection to PC
-
 	// Connect to WiFi
 	Serial.print("Connect to: ");
 	Serial.println(SSID);
@@ -50,6 +56,7 @@ void setup()
 
 	client.setServer(mqttServer, 1883);
 	client.setCallback(callback);
+
 	preferences.begin("postmelder", false); // start preferences
 
 	scale.begin(SCALE_DATA_PIN, SCALE_CLOCK_PIN); // start scale
@@ -64,25 +71,31 @@ void setup()
 	{ // read values from flash if already initialised
 		Serial.println("already initialised, loading values...");
 
-		scaleValue = preferences.getFloat("scaleValue", 0); // read values from flash
-		scaleOffset = preferences.getLong("scaleOffset", 0);
+		loadScaleValues(); // load values from flash
 
 		Serial.print("ScaleValue: "); // print them to the serial monitor
 		Serial.print(scaleValue);
 		Serial.print(", ScaleOffset: ");
 		Serial.println(scaleOffset);
 
-		scale.set_offset(scaleOffset); // set scale values
-		scale.set_scale(scaleValue);
-
 		weight = readScale(); // inital reading to discard any weird measurements
 	}
 
 	preferences.end(); // close preferences
+	Serial.println("###################################  Setup Done!!! ################################");
 }
 
 void loop()
 {
+	static byte init_counter = 0;
+	if (state.isInit())
+	{
+		init_counter++;
+		if (init_counter > 3)
+		{
+			state.setState(States::INIT, false);
+		}
+	}
 	// TODO: Optimieren wann welche Status LED blinkt
 	if (WiFi.status() != WL_CONNECTED)
 	{
@@ -99,6 +112,8 @@ void loop()
 	// FIXME: It does not get detected when no scale is connected
 	if (scale.is_ready()) // check if scale is ready
 	{
+		Serial.println("scale is ready!");
+
 		static bool weightChange;			  // saves if weight changed above or below threshold inbetween two readings
 		static bool printed;				  // saves wether settled weight has already been sent via MQTT and printed to the serial monitor
 		static float previousWeight = weight; // saves the value of the previous measurement
@@ -136,10 +151,6 @@ void loop()
 			printed = true;
 		}
 	}
-	else
-	{
-		// TODO: Fehler anzeigen
-	}
 
 	client.loop();
 	state.loop();
@@ -171,6 +182,34 @@ void callback(char *topic, byte *message, unsigned int length)
 		if (messageTemp != "connected" && messageTemp != "disconnected")
 			return;
 		isServerOnline = messageTemp == "connected";
+		if (messageTemp == "connected")
+		{
+			state.setState(States::INIT, false);
+			state.setState(States::COMMUNICATION_ERR, false);
+		}
+		else
+		{
+			state.setState(States::COMMUNICATION_ERR, true);
+		}
+	}
+	else if (topicStr == "/" + MAC + "/command/CalcOffset")
+	{
+		scaleOffset = calibrateScaleOffset();
+		client.publish(("/" + MAC + "/calibration/scaleOffset").c_str(), String(scaleOffset, 2).c_str());
+		Serial.print("CalcOffset Message sent");
+	}
+	else if (topicStr == "/" + MAC + "/command/CalibrateScale")
+	{
+		scaleValue = calibrateScaleFactor(atoi(messageTemp.c_str()));
+		client.publish(("/" + MAC + "/calibration/scaleValue").c_str(), String(scaleValue, 2).c_str());
+	}
+	else if (topicStr == "/" + MAC + "/command/ApplyCalibration")
+	{
+		saveScaleValues();
+	}
+	else if (topicStr == "/" + MAC + "/command/CancelCalibration")
+	{
+		loadScaleValues();
 	}
 }
 void reconnect()
@@ -191,8 +230,6 @@ void reconnect()
 		// Sending device now available
 		client.publish("/devices", MAC.c_str());
 		client.publish(("/" + MAC + "/online").c_str(), "connected", true);
-		state.setState(States::INIT, false);
-		state.setState(States::COMMUNICATION_ERR, false);
 	}
 	else
 	{
@@ -206,19 +243,17 @@ void sendWeight(float weight)
 	client.publish(("/" + MAC + "/currentWeight").c_str(), String(weight, 1).c_str(), true);
 }
 
-void calibrateScale()
-{ // calibrates the scale with a user dialog via the serial monitor and saves the results to flash
-	Serial.println("\n\nCalibration\n===========");
-	Serial.println("remove all weight from the scale");
-	//  flush Serial input
-	while (Serial.available())
-		Serial.read();
+float readScale()
+{ // reads the scale
+	float value = 0;
 
-	Serial.println("and press enter, 'New Line' has to be activated in the serial monitor"
-				   "\n");
-	while (Serial.available() == 0)
-		;
+	value = scale.get_units(20); // mean of 20 measurements
 
+	return value;
+}
+
+float calibrateScaleOffset() // tares the scale when no weight is present
+{
 	Serial.println("calculating scaleOffset");
 	scale.tare(20); // mean of 20 measurements
 	scaleOffset = scale.get_offset();
@@ -227,54 +262,51 @@ void calibrateScale()
 	Serial.println(scaleOffset);
 	Serial.println();
 
-	Serial.println("place known weight on scale");
-	//  flush Serial input
-	while (Serial.available())
-		Serial.read();
+	return scaleOffset;
+}
 
-	Serial.println("type in the weight in whole grams and press enter");
-	uint32_t weight = 0;
-	while (Serial.peek() != '\n')
-	{
-		if (Serial.available())
-		{
-			char ch = Serial.read();
-			if (isdigit(ch))
-			{
-				weight *= 10;
-				weight = weight + (ch - '0');
-			}
-		}
-	}
+float calibrateScaleFactor(unsigned int grams) // calculates the scale conversion factor using a known weight in whole grams
+{
+	Serial.println("calculating scale conversion factor...");
 
-	Serial.print("WEIGHT: ");
-	Serial.println(weight);
-	scale.calibrate_scale(weight, 20);
-
+	scale.calibrate_scale(grams, 20);
 	scaleValue = scale.get_scale();
 
-	Serial.println(scaleValue, 6);
-	scale.set_offset(scaleOffset); // set scale values
-	scale.set_scale(scaleValue);
+	Serial.print("conversion factor: "); // print result to serial monitor
+	Serial.println(scaleValue);
 
-	Serial.println("\n\n");
+	return scaleValue;
+}
 
+void saveScaleValues() // saves the current scale values to flash
+{
 	preferences.begin("postmelder", false); // start preferences
 
-	scaleInitialised = true;
+	if (scaleValue != 0 && scaleOffset != 0) // check if both scale parameters have been set
+	{
+		scaleInitialised = true; // set initialised-flag
+	}
+	else
+	{
+		scaleInitialised = false;
+	}
 
 	preferences.putFloat("scaleValue", scaleValue); // save values to flash
 	preferences.putLong("scaleOffset", scaleOffset);
-	preferences.putBool("scaleInitialised", scaleInitialised);
+	preferences.putBool("initialised", scaleInitialised);
 
 	preferences.end(); // close preferences
 }
 
-float readScale()
-{ // reads the scale
-	float value = 0;
+void loadScaleValues()
+{											// loads and applies the scale values saved in flash
+	preferences.begin("postmelder", false); // start preferences
 
-	value = scale.get_units(20); // mean of 20 measurements
+	scaleValue = preferences.getFloat("scaleValue", 0); // read values from flash
+	scaleOffset = preferences.getLong("scaleOffset", 0);
 
-	return value;
+	scale.set_offset(scaleOffset); // set scale values
+	scale.set_scale(scaleValue);
+
+	preferences.end(); // close preferences
 }

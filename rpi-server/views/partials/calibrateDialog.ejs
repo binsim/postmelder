@@ -1,0 +1,39 @@
+<dialog class="calibrate">
+	<h1></h1>
+	<h2></h2>
+	<section class="stage">
+		<p>
+			Stellen Sie sicher, dass das Postfach leer ist und drücken Sie dann
+			auf 'Weiter'
+		</p>
+	</section>
+	<section class="stage">
+		<p>
+			Legen Sie ein Gewicht auf die Waage. Geben Sie anschließend das
+			Gewicht in vollen Gramm ein und fahren anschließend mit 'Weiter'
+			fort
+		</p>
+		<label for="weight">Gewicht: </label>
+		<input type="number" name="weight" id="weight" /><span>g</span>
+	</section>
+	<section class="stage">
+		<p>
+			Die Waage wurde erfolgreich kalibriert, um die Einstellungen
+			anzuwenden, drücken Sie 'Anwenden'
+		</p>
+	</section>
+	<form action="" method="post">
+		<div>
+			<input type="hidden" name="scale-offset" id="scale-offset" />
+			<input type="hidden" name="scale-value" id="scale-value" />
+		</div>
+		<div>
+			<button class="cancel">Abbrechen</button>
+			<div style="float: right">
+				<button class="prev">Zurück</button>
+				<button class="next">Weiter</button>
+				<button type="submit">Anwenden</button>
+			</div>
+		</div>
+	</form>
+</dialog>

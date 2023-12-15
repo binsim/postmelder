@@ -21,30 +21,62 @@ void State::setState(States state, bool isActive)
 	{
 	case States::INIT:
 		if (isActive)
+		{
+			if (this->isInit())
+				return;
 			this->c_currentState = 1 << 0;
+		}
 		else
+		{
+			if (!this->isInit())
+				return;
 			this->c_currentState &= ~(1 << 0);
+		}
 		break;
 
 	case States::COMMUNICATION_ERR:
 		if (isActive)
+		{
+			if (this->isCommunicationError())
+				return;
 			this->c_currentState |= 1 << 7;
+		}
 		else
+		{
+			if (!this->isCommunicationError())
+				return;
 			this->c_currentState &= ~(1 << 7);
+		}
 		break;
 
 	case States::SCALE_ERR:
 		if (isActive)
+		{
+			if (this->isScaleError())
+				return;
 			this->c_currentState |= 1 << 6;
+		}
 		else
+		{
+			if (!this->isScaleError())
+				return;
 			this->c_currentState &= ~(1 << 6);
+		}
 		break;
 
 	case States::OCCUPIED:
 		if (isActive)
+		{
+			if (this->isOccupied())
+				return;
 			this->c_currentState |= 1 << 1;
+		}
 		else
+		{
+			if (!this->isOccupied())
+				return;
 			this->c_currentState &= ~(1 << 1);
+		}
 		break;
 
 	default:
@@ -52,60 +84,66 @@ void State::setState(States state, bool isActive)
 		Serial.println(state);
 		break;
 	}
-	// TODO: Update lights
+	this->updateLEDs();
+
+	Serial.print("State changed: ");
+	Serial.println(this->c_currentState, HEX);
 }
 
 bool State::isInit()
 {
-	return !!this->c_currentState & 1 << 0;
+	return this->c_currentState & 1 << 0;
 }
 bool State::isOccupied()
 {
-	return !!this->c_currentState & 1 << 1;
+	return this->c_currentState & 1 << 1;
 }
 bool State::isCommunicationError()
 {
-	return !!this->c_currentState & 1 << 7;
+	return this->c_currentState & 1 << 7;
 }
 bool State::isScaleError()
 {
-	return !!this->c_currentState & 1 << 6;
+	return this->c_currentState & 1 << 6;
 }
 bool State::isError()
 {
-	return this->isCommunicationError() | this->isScaleError();
+	return this->isCommunicationError() || this->isScaleError();
 }
 
 void State::loop()
 {
-	this->updateLEDs();
+	// this->updateLEDs();
 }
 
 void State::updateLEDs()
 {
 	if (this->isError())
 	{
+		Serial.print("In Error");
 		ledcWrite(R_LEDC_CHANEL, LEDC_ON_DUTY);
 		ledcWrite(B_LEDC_CHANEL, LEDC_OFF_DUTY);
 		digitalWrite(G_LED_PIN, LOW);
 	}
 	else if (this->isInit())
 	{
+		Serial.print("In Init");
 		ledcWrite(R_LEDC_CHANEL, LEDC_OFF_DUTY);
 		ledcWrite(B_LEDC_CHANEL, LEDC_ON_DUTY);
 		digitalWrite(G_LED_PIN, LOW);
 	}
 	else if (this->isOccupied())
 	{
+		Serial.print("In Occupied");
 		ledcWrite(R_LEDC_CHANEL, LEDC_OFF_DUTY);
 		ledcWrite(B_LEDC_CHANEL, LEDC_OFF_DUTY);
 		digitalWrite(G_LED_PIN, HIGH);
 	}
 	else
 	{
+		Serial.print("In Empty");
 		ledcWrite(R_LEDC_CHANEL, LEDC_OFF_DUTY);
 		ledcWrite(B_LEDC_CHANEL, LEDC_OFF_DUTY);
 		digitalWrite(G_LED_PIN, LOW);
 	}
-	this->updateLEDs();
 }

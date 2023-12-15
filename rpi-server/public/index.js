@@ -25,6 +25,12 @@ const testmessage_response_dialog_close_btn =
 const box_details_dialog = document.querySelector('dialog.box-details');
 const box_details_dialog_close_btn =
 	box_details_dialog.querySelector('button#close');
+
+const calibrate_dialog = document.querySelector('dialog.calibrate');
+const calibrate_cancel_btn = calibrate_dialog.querySelector('button.cancel');
+const calibrate_stages = calibrate_dialog.querySelectorAll('section.stage');
+const calibrate_prev_button = calibrate_dialog.querySelector('button.prev');
+const calibrate_next_button = calibrate_dialog.querySelector('button.next');
 //#endregion Define element variables
 
 //#region DOM event listener
@@ -50,6 +56,108 @@ notification_port_checkbox.addEventListener('change', () => {
 	if (!notification_port_checkbox.checked) {
 		notification_port_input.value = DEFAULT_SMTP_PORT;
 	}
+});
+calibrate_cancel_btn.addEventListener('click', async (e) => {
+	// Prevent form to be submitted
+	e.preventDefault();
+
+	// Close dialog
+	calibrate_dialog.close();
+	// Send abort to esp-client
+	const response = await fetch(
+		`/calibrate/${current_calibrate_device}/cancel`,
+		{
+			method: 'POST',
+		}
+	);
+
+	// Reset saved values
+	current_calibrate_device = undefined;
+	current_calibrate_stage = 0;
+	current_calibrate_url = undefined;
+
+	// Check if successfully aborted
+	if (response.status !== 200) {
+		alert(await response.text());
+	}
+
+	// Nothing must be done
+});
+calibrate_prev_button.addEventListener('click', (e) => {
+	// Prevent form to be submitted
+	e.preventDefault();
+
+	// Return to previous stage
+	calibrate_stage_changed(-1);
+});
+calibrate_next_button.addEventListener('click', async (e) => {
+	// Prevent form to be submitted
+	e.preventDefault();
+
+	let response;
+	switch (current_calibrate_stage) {
+		case 0:
+			// Make fetch request to execute calibrate on esp-device
+			response = await fetch(current_calibrate_url, {
+				method: 'POST',
+			});
+
+			// Check if execution was successful
+			if (response.status != 200) {
+				// Notify user for this error
+				alert(await response.text());
+				return;
+			}
+			// Get data from response and write it to hidden input
+			const scaleOffset = Number((await response.json()).scaleOffset);
+			if (isNaN(scaleOffset)) {
+				alert('Response invalid');
+				return;
+			}
+			const scaleOffset_input =
+				calibrate_dialog.querySelector('input#scale-offset');
+			if (scaleOffset_input === undefined) {
+				alert('Unexpected error');
+				return;
+			}
+			scaleOffset_input.value = scaleOffset;
+			break;
+		case 1:
+			// Make fetch request to execute calibration with specified weight
+			response = await fetch(current_calibrate_url, {
+				method: 'POST',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					weight: calibrate_dialog.querySelector('input#weight')
+						.value,
+				}),
+			});
+			// Check if execution was successful
+			if (response.status != 200) {
+				// Notify user for this error
+				alert(await response.text());
+				return;
+			}
+
+			// Get data from response and write to hidden input
+			const scaleValue = Number((await response.json()).scaleValue);
+			if (isNaN(scaleValue)) {
+				alert('Response invalid');
+				return;
+			}
+			const scaleValue_input =
+				calibrate_dialog.querySelector('input#scale-value');
+			if (scaleValue_input === undefined) {
+				alert('Unexpected error');
+				return;
+			}
+			scaleValue_input.value = scaleValue;
+			break;
+	}
+	calibrate_stage_changed(+1);
 });
 //#endregion DOM event listener
 
@@ -160,4 +268,61 @@ async function boxDetails(e, deviceId) {
 		history_ul.innerHTML = '';
 		history_h2.innerText = 'Postfach ist leer';
 	}
+}
+
+let current_calibrate_device = undefined;
+let current_calibrate_stage = 0;
+let current_calibrate_url = undefined;
+async function calibrateDevice(e, deviceId) {
+	e.stopPropagation();
+
+	// Show witch esp-device gets calibrated
+	const h1 = calibrate_dialog.querySelector('h1');
+	h1.innerText = 'Kalibrieren: ' + deviceId;
+
+	current_calibrate_device = deviceId;
+	current_calibrate_stage = 0;
+
+	calibrate_stage_changed(0);
+
+	// Show calibrate dialog
+	calibrate_dialog.showModal();
+}
+function calibrate_stage_changed(stageChange) {
+	// update to new calibration stage
+	current_calibrate_stage += stageChange;
+
+	// Show new active stage in dialog
+	calibrate_stages.forEach((stage, i) => {
+		const display = i == current_calibrate_stage ? 'block' : 'none';
+		stage.style.display = display;
+	});
+
+	// Update html for new stage
+	const h2 = calibrate_dialog.querySelector('h2');
+	const form = calibrate_dialog.querySelector('form');
+	const finish_button = calibrate_dialog.querySelector(
+		'form button[type="submit"]'
+	);
+
+	// Update ui for new stage
+	h2.innerText =
+		'Schritt ' +
+		((current_calibrate_stage ?? 0) + 1) +
+		' von ' +
+		calibrate_stages.length;
+
+	calibrate_prev_button.style.visibility =
+		current_calibrate_stage > 0 ? 'visible' : 'hidden';
+	calibrate_next_button.style.display =
+		current_calibrate_stage < calibrate_stages.length - 1
+			? 'inline'
+			: 'none';
+	finish_button.style.display =
+		current_calibrate_stage == calibrate_stages.length - 1
+			? 'inline'
+			: 'none';
+
+	current_calibrate_url = `/calibrate/${current_calibrate_device}/${current_calibrate_stage}`;
+	form.action = current_calibrate_url;
 }

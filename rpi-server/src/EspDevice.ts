@@ -97,6 +97,11 @@ export declare interface IDevice extends JSON_Device {
 			newVal: CheckInterval | undefined
 		) => void
 	): this;
+
+	calcScaleOffset(): Promise<number>;
+	calcScaleWeight(weight: number): Promise<number>;
+	applyScaleCalibration(scaleOffset: number, scaleValue: number): void;
+	cancelCalibration(): void;
 }
 
 export class Device extends EventEmitter implements IDevice {
@@ -109,6 +114,17 @@ export class Device extends EventEmitter implements IDevice {
 		this._device = device;
 	}
 
+	private calibrateOffsetMqttListener = (value: number) => {
+		logger.error(
+			'Calibrate should not been executed, currently not listening to it'
+		);
+	};
+	private calibrateValueMqttListener = (value: number) => {
+		logger.error(
+			'Calibrate should not been executed, currently not listening to it'
+		);
+	};
+
 	/**
 	 * Handles the received mqtt message and updates its corresponding values depending
 	 *
@@ -117,8 +133,13 @@ export class Device extends EventEmitter implements IDevice {
 	 */
 	_onMessageArrived(topic: string, payload: Buffer) {
 		// TODO: Add logging
-
-		switch (topic.split('/').at(-1)) {
+		switch (topic) {
+			case '': // Register Device topic sent form server
+			case 'command/CancelCalibration':
+			case 'command/CalcOffset':
+			case 'command/CalibrateScale':
+			case 'command/ApplyCalibration':
+				break;
 			case 'online':
 				// Update the online
 				switch (payload.toString()) {
@@ -164,14 +185,14 @@ export class Device extends EventEmitter implements IDevice {
 				// Write weight update to file in case this service has to restart
 				saveToFile(MQTTService.Instance.devices);
 				break;
-			default:
-				// The received topic is yet unknown, warn the user about it
-				logger.warn(
-					`${
-						this._device.id
-					} received unknown topic '${topic}' with payload '${payload.toString()}'`
-				);
+			case 'calibration/scaleOffset':
+				this.calibrateOffsetMqttListener(Number(payload.toString()));
 				break;
+			case 'calibration/scaleValue':
+				this.calibrateValueMqttListener(Number(payload.toString()));
+				break;
+			default:
+				throw new Error(`Topic(${topic}) is unknown`);
 		}
 	}
 
@@ -260,6 +281,80 @@ export class Device extends EventEmitter implements IDevice {
 		return {
 			...this._device,
 		};
+	}
+	public calcScaleOffset(): Promise<number> {
+		return new Promise((resolve, reject) => {
+			if (!this.isOnline) {
+				reject('Device is offline');
+				return;
+			}
+
+			const timeout = setTimeout(() => {
+				reject(
+					'Timeout for calcScaleOffset elapsed, response took to long'
+				);
+			}, 5_000);
+
+			MQTTService.Instance.publish(
+				`/${this._device.id}/command/CalcOffset`,
+				Buffer.from('')
+			);
+
+			let temp = this.calibrateOffsetMqttListener;
+			this.calibrateOffsetMqttListener = (value: number) => {
+				clearTimeout(timeout);
+				this.calibrateOffsetMqttListener = temp;
+
+				resolve(value);
+			};
+		});
+	}
+	public calcScaleWeight(weight: number): Promise<number> {
+		return new Promise((resolve, reject) => {
+			if (!this.isOnline) {
+				reject('Device is offline');
+				return;
+			}
+			const timeout = setTimeout(() => {
+				reject(
+					'Timeout for calcScaleOffset elapsed, response took to long'
+				);
+			}, 5_000);
+
+			MQTTService.Instance.publish(
+				`/${this._device.id}/command/CalibrateScale`,
+				Buffer.from(weight.toString())
+			);
+
+			let temp = this.calibrateValueMqttListener;
+			this.calibrateValueMqttListener = (value: number) => {
+				clearTimeout(timeout);
+				this.calibrateValueMqttListener = temp;
+
+				resolve(value);
+			};
+		});
+	}
+
+	public applyScaleCalibration(
+		scaleOffset: number,
+		scaleValue: number
+	): void {
+		MQTTService.Instance.publish(
+			`/${this._device.id}/command/ApplyCalibration`,
+			Buffer.from(
+				JSON.stringify({
+					offset: scaleOffset,
+					value: scaleValue,
+				})
+			)
+		);
+	}
+	public cancelCalibration(): void {
+		MQTTService.Instance.publish(
+			`/${this._device.id}/command/CancelCalibration`,
+			Buffer.from('')
+		);
 	}
 }
 

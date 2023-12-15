@@ -64,7 +64,7 @@ export class StateService implements IStateService {
 	 */
 	addDeviceListener(device: IDevice) {
 		device.on('onlineChanged', (value) => {
-			if (value) {
+			if (!value) {
 				this.deviceList.push(device);
 			} else {
 				this.deviceList.splice(
