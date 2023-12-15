@@ -21,30 +21,62 @@ void State::setState(States state, bool isActive)
 	{
 	case States::INIT:
 		if (isActive)
+		{
+			if (this->isInit())
+				return;
 			this->c_currentState = 1 << 0;
+		}
 		else
+		{
+			if (!this->isInit())
+				return;
 			this->c_currentState &= ~(1 << 0);
+		}
 		break;
 
 	case States::COMMUNICATION_ERR:
 		if (isActive)
+		{
+			if (this->isCommunicationError())
+				return;
 			this->c_currentState |= 1 << 7;
+		}
 		else
+		{
+			if (!this->isCommunicationError())
+				return;
 			this->c_currentState &= ~(1 << 7);
-		break;
+			break;
+		}
 
 	case States::SCALE_ERR:
 		if (isActive)
+		{
+			if (this->isScaleError())
+				return;
 			this->c_currentState |= 1 << 6;
+		}
 		else
+		{
+			if (!this->isScaleError())
+				return;
 			this->c_currentState &= ~(1 << 6);
+		}
 		break;
 
 	case States::OCCUPIED:
 		if (isActive)
+		{
+			if (this->isOccupied())
+				return;
 			this->c_currentState |= 1 << 1;
+		}
 		else
+		{
+			if (!this->isOccupied())
+				return;
 			this->c_currentState &= ~(1 << 1);
+		}
 		break;
 
 	default:
