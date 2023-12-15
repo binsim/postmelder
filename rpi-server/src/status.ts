@@ -12,14 +12,23 @@ export interface IStateService {
 }
 export class StateService implements IStateService {
 	private static _instance: StateService;
-	private r_pin = 1;
-	private g_pin = 1;
-	private b_pin = 1;
+	private r_pin = Number(process.env.SERVER_R_PIN);
+	private g_pin = Number(process.env.SERVER_G_PIN);
+	private b_pin = Number(process.env.SERVER_B_PIN);
 
 	private deviceList: IDevice[] = [];
 	private _externalError = false;
 
 	private constructor() {
+		if (!this.pinsDefined) {
+			logger.error(
+				`Can not use RGB-LED because a LED is undefined ${JSON.stringify(
+					{ r: this.r_pin, g: this.g_pin, b: this.b_pin }
+				)}`
+			);
+			return;
+		}
+
 		// TODO: Log warnings of this function
 		init({ close_on_exit: true, mapping: 'gpio' });
 
@@ -43,6 +52,9 @@ export class StateService implements IStateService {
 	}
 	get isOk() {
 		return !this.externalError && !this.internalError;
+	}
+	private get pinsDefined() {
+		return !(isNaN(this.r_pin) || isNaN(this.g_pin) || isNaN(this.g_pin));
 	}
 
 	/**
@@ -79,6 +91,8 @@ export class StateService implements IStateService {
 	 * Update GPIO output depending on states
 	 */
 	private updateColor() {
+		if (!this.pinsDefined) return;
+
 		write(this.r_pin, this.externalError ? HIGH : LOW);
 		write(this.g_pin, this.isOk ? HIGH : LOW);
 		write(this.b_pin, this.internalError ? HIGH : LOW);
