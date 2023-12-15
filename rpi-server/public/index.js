@@ -61,12 +61,8 @@ calibrate_cancel_btn.addEventListener('click', async (e) => {
 	// Prevent form to be submitted
 	e.preventDefault();
 
-	// Close dialog and reset saved values
+	// Close dialog
 	calibrate_dialog.close();
-	current_calibrate_device = undefined;
-	current_calibrate_stage = 0;
-	current_calibrate_url = undefined;
-
 	// Send abort to esp-client
 	const response = await fetch(
 		`/calibrate/${current_calibrate_device}/cancel`,
@@ -74,6 +70,11 @@ calibrate_cancel_btn.addEventListener('click', async (e) => {
 			method: 'POST',
 		}
 	);
+
+	// Reset saved values
+	current_calibrate_device = undefined;
+	current_calibrate_stage = 0;
+	current_calibrate_url = undefined;
 
 	// Check if successfully aborted
 	if (response.status !== 200) {
