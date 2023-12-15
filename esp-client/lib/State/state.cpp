@@ -46,8 +46,8 @@ void State::setState(States state, bool isActive)
 			if (!this->isCommunicationError())
 				return;
 			this->c_currentState &= ~(1 << 7);
-			break;
 		}
+		break;
 
 	case States::SCALE_ERR:
 		if (isActive)

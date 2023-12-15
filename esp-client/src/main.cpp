@@ -182,6 +182,15 @@ void callback(char *topic, byte *message, unsigned int length)
 		if (messageTemp != "connected" && messageTemp != "disconnected")
 			return;
 		isServerOnline = messageTemp == "connected";
+		if (messageTemp == "connected")
+		{
+			state.setState(States::INIT, false);
+			state.setState(States::COMMUNICATION_ERR, false);
+		}
+		else
+		{
+			state.setState(States::COMMUNICATION_ERR, true);
+		}
 	}
 	else if (topicStr == "/" + MAC + "/command/CalcOffset")
 	{
@@ -221,8 +230,6 @@ void reconnect()
 		// Sending device now available
 		client.publish("/devices", MAC.c_str());
 		client.publish(("/" + MAC + "/online").c_str(), "connected", true);
-		state.setState(States::INIT, false);
-		state.setState(States::COMMUNICATION_ERR, false);
 	}
 	else
 	{
