@@ -1,5 +1,10 @@
 #include "state.h"
 
+void State::init()
+{
+	this->setupLEDs();
+	this->setState(States::INIT, true);
+}
 void State::setupLEDs()
 {
 	pinMode(R_LED_PIN, OUTPUT);
@@ -113,23 +118,30 @@ bool State::isError()
 
 void State::loop()
 {
-	// this->updateLEDs();
+	static byte init_counter = 0;
+	if (this->isInit())
+	{
+		if (init_counter++ > 3)
+		{
+			this->setState(States::INIT, false);
+		}
+	}
 }
 
 void State::updateLEDs()
 {
-	if (this->isError())
-	{
-		Serial.print("In Error");
-		ledcWrite(R_LEDC_CHANEL, LEDC_ON_DUTY);
-		ledcWrite(B_LEDC_CHANEL, LEDC_OFF_DUTY);
-		digitalWrite(G_LED_PIN, LOW);
-	}
-	else if (this->isInit())
+	if (this->isInit())
 	{
 		Serial.print("In Init");
 		ledcWrite(R_LEDC_CHANEL, LEDC_OFF_DUTY);
 		ledcWrite(B_LEDC_CHANEL, LEDC_ON_DUTY);
+		digitalWrite(G_LED_PIN, LOW);
+	}
+	else if (this->isError())
+	{
+		Serial.print("In Error");
+		ledcWrite(R_LEDC_CHANEL, LEDC_ON_DUTY);
+		ledcWrite(B_LEDC_CHANEL, LEDC_OFF_DUTY);
 		digitalWrite(G_LED_PIN, LOW);
 	}
 	else if (this->isOccupied())

@@ -41,8 +41,7 @@ void setup()
 	Serial.begin(115200); // Serial connection to PC
 	delay(100);
 	Serial.println("###################################  STARTUP ################################");
-	state.setupLEDs();
-	state.setState(States::INIT, true);
+	state.init();
 
 #ifdef WIPE			   // if wipe is defined
 	nvs_flash_erase(); // format nvs-partition
@@ -87,22 +86,9 @@ void setup()
 
 void loop()
 {
-	static byte init_counter = 0;
-	if (state.isInit())
-	{
-		init_counter++;
-		if (init_counter > 3)
-		{
-			state.setState(States::INIT, false);
-		}
-	}
-	// TODO: Optimieren wann welche Status LED blinkt
 	if (WiFi.status() != WL_CONNECTED)
 	{
-		if (!state.isInit()) // state unequal Init
-		{
-			state.setState(States::COMMUNICATION_ERR, true);
-		}
+		state.setState(States::COMMUNICATION_ERR, true);
 	}
 	else
 	{
@@ -217,11 +203,6 @@ void reconnect()
 	if (client.connected())
 		return;
 
-	if (!state.isInit())
-	{
-		state.setState(States::COMMUNICATION_ERR, true);
-	}
-
 	// TODO: Get MAC Address as ID
 	if (client.connect(MAC.c_str(), MQTT_USER, MQTT_PASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected"))
 	{
@@ -233,6 +214,8 @@ void reconnect()
 	}
 	else
 	{
+		state.setState(States::COMMUNICATION_ERR, true);
+
 		Serial.print("failed, rc=");
 		Serial.println(client.state());
 		delay(1000);

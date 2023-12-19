@@ -15,17 +15,18 @@ enum States
 class State
 {
 public:
-	void setupLEDs();
+	void init();
 
 	void setState(States state, bool isActive);
-	bool isInit();
 	void loop();
 
 private:
+	bool isInit();
 	bool isError();
 	bool isCommunicationError();
 	bool isScaleError();
 	bool isOccupied();
+	void setupLEDs();
 	void updateLEDs();
 	char c_currentState;
 };
