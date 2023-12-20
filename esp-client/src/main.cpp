@@ -5,22 +5,17 @@
 #include "configuration.h"
 #include "state.h"
 #include "Scale.h"
+#include "MqttUtils.h"
 
-WiFiClient wiFiClient;
 IPAddress mqttServer(SERVER_IP);
-PubSubClient client(wiFiClient);
 State state;
 Scale scale;
-const String MAC = WiFi.macAddress();
-// FIXME: Value never read
+
 bool connectedWithNode = false;
-// FIXME: Value never read
 bool isServerOnline = false;
 
 // Function declarations
-void callback(char *topic, byte *message, unsigned int length);
-void reconnect();
-void sendWeight(float weight);
+void callback(SubTopic topic, String payload);
 
 void setup()
 {
@@ -38,9 +33,7 @@ void setup()
 	Serial.println(SSID);
 	WiFi.begin(SSID);
 
-	client.setServer(mqttServer, 1883);
-	client.setCallback(callback);
-
+	setupMqtt(callback);
 	scale.init();
 
 	Serial.println("###################################  Setup Done!!! ################################");
@@ -48,104 +41,55 @@ void setup()
 
 void loop()
 {
-	if (WiFi.status() != WL_CONNECTED)
-	{
-		state.setState(States::COMMUNICATION_ERR, true);
-	}
-	else
-	{
-		reconnect();
-	}
+	bool wiFiConnected = WiFi.status() == WL_CONNECTED;
+	if (wiFiConnected)
+		mqttLoop();
+
+	state.setState(States::COMMUNICATION_ERR, !wiFiConnected || !isServerOnline || !connectedWithNode);
 
 	if (scale.weightChanged())
 	{
 		float weight = scale.getCurrentWeight();
 
-		sendWeight(weight);
+		publish(PubTopic::WEIGHT_UPDATE, String(weight, 1), true);
 	}
-	client.loop();
 	state.loop();
 }
-void callback(char *topic, byte *message, unsigned int length)
+
+void callback(SubTopic topic, String message)
 {
-	String messageTemp;
-	String topicStr(topic);
-
-	Serial.print("Message arrived on topic: '");
-	Serial.print(topic);
-	Serial.print("' Message: '");
-
-	for (int i = 0; i < length; i++)
+	switch (topic)
 	{
-		Serial.print((char)message[i]);
-		messageTemp += (char)message[i];
-	}
-	Serial.println("'");
-
-	if (topicStr == ("/" + MAC))
-	{
-		// TODO: Handle case
+	case SubTopic::DEVICE_REGISTERED:
 		connectedWithNode = true;
-	}
-	else if (topicStr == "/server/online")
+		break;
+	case SubTopic::SERVER_ONLINE:
 	{
-		// TODO: Let user know
-		if (messageTemp != "connected" && messageTemp != "disconnected")
-			return;
-		isServerOnline = messageTemp == "connected";
-		if (messageTemp == "connected")
+		if (message == "disconnected" || message == "connected")
 		{
-			state.setState(States::INIT, false);
-			state.setState(States::COMMUNICATION_ERR, false);
+			isServerOnline = message == "connected";
+			if (isServerOnline)
+			{
+				state.setState(States::INIT, false);
+
+				publish(PubTopic::REGISTER_DEVICE);
+				break;
+			}
+			connectedWithNode = false;
 		}
-		else
-		{
-			state.setState(States::COMMUNICATION_ERR, true);
-		}
+		break;
 	}
-	else if (topicStr == "/" + MAC + "/command/CalcOffset")
-	{
-		float scaleOffset = scale.calibrateScaleOffset();
-		client.publish(("/" + MAC + "/calibration/scaleOffset").c_str(), String(scaleOffset, 2).c_str());
-	}
-	else if (topicStr == "/" + MAC + "/command/CalibrateScale")
-	{
-		float scaleValue = scale.calibrateScaleFactor(atoi(messageTemp.c_str()));
-		client.publish(("/" + MAC + "/calibration/scaleValue").c_str(), String(scaleValue, 2).c_str());
-	}
-	else if (topicStr == "/" + MAC + "/command/ApplyCalibration")
-	{
+	case SubTopic::COMMAND_CALC_OFFSET:
+		publish(PubTopic::SCALE_OFFSET, String(scale.calibrateScaleOffset(), 2));
+		break;
+	case SubTopic::COMMAND_CALC_FACTOR:
+		publish(PubTopic::SCALE_FACTOR, String(scale.calibrateScaleFactor(message.toInt()), 2));
+		break;
+	case SubTopic::COMMAND_APPLY_CALIBRATION:
 		scale.saveScaleValues();
-	}
-	else if (topicStr == "/" + MAC + "/command/CancelCalibration")
-	{
+		break;
+	case SubTopic::COMMAND_CANCEL_CALIBRATION:
 		scale.cancelCalibration();
+		break;
 	}
-}
-void reconnect()
-{
-	if (client.connected())
-		return;
-
-	// TODO: Get MAC Address as ID
-	if (client.connect(MAC.c_str(), MQTT_USER, MQTT_PASS, ("/" + MAC + "/online").c_str(), 1, true, "disconnected"))
-	{
-		client.subscribe(("/" + MAC + "/#").c_str(), 1);
-		client.subscribe("/server/online", 1);
-		// Sending device now available
-		client.publish("/devices", MAC.c_str());
-		client.publish(("/" + MAC + "/online").c_str(), "connected", true);
-	}
-	else
-	{
-		state.setState(States::COMMUNICATION_ERR, true);
-
-		Serial.print("failed, rc=");
-		Serial.println(client.state());
-		delay(1000);
-	}
-}
-void sendWeight(float weight)
-{
-	client.publish(("/" + MAC + "/currentWeight").c_str(), String(weight, 1).c_str(), true);
 }
