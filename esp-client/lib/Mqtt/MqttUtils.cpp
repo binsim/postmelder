@@ -26,13 +26,6 @@ const SubTopic getSubTopic(const char *topic)
 			return i->first;
 	}
 
-	// Check for self published messages
-	for (auto i = PubTopicMap.begin(); i != PubTopicMap.end(); ++i)
-	{
-		if (i->second == topic)
-			return UNDEFINED;
-	}
-
 	// Notify user using serial
 	Serial.print("Received topic '");
 	Serial.print(topic);
@@ -88,10 +81,13 @@ void mqttLoop()
 	// Reconnect to broker if it is not already connected
 	if (mqttClient.connect(WiFi.macAddress().c_str(), MQTT_USER, MQTT_PASS, willTopic, 1, true, "disconnected"))
 	{
-		// Subscribe to all topics that are connected to this device
-		mqttClient.subscribe(("/" + WiFi.macAddress() + "/#").c_str(), 1);
-		// We want to get notified if server online state changes
-		mqttClient.subscribe("/server/online", 1);
+		// Subscribe to all SubTopics
+		for (auto i = SubTopicMap.begin(); i != SubTopicMap.end(); ++i)
+		{
+			Serial.print("Subscribe to: ");
+			Serial.println(i->second);
+			mqttClient.subscribe(i->second);
+		}
 
 		// Update last will topic to be connected
 		mqttClient.publish(willTopic, "connected", true);
