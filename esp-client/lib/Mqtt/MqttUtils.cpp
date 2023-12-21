@@ -87,7 +87,8 @@ void mqttLoop()
 	// if (mqttClient.connect(WiFi.macAddress().c_str(), MQTT_USER, MQTT_PASS))
 	{
 		// Subscribe to all SubTopics
-		mqttClient.subscribe(("/" + WiFi.macAddress() + "/#").c_str());
+		mqttClient.subscribe(("/" + WiFi.macAddress() + "/#").c_str(), 1);
+		mqttClient.subscribe("/server/online", 1);
 
 		// Update last will topic to be connected
 		mqttClient.publish(willTopic.c_str(), "connected", true);
