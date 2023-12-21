@@ -7,7 +7,6 @@
 #include "Scale.h"
 #include "MqttUtils.h"
 
-IPAddress mqttServer(SERVER_IP);
 State state;
 Scale scale;
 
@@ -41,9 +40,8 @@ void setup()
 
 void loop()
 {
+	mqttLoop();
 	bool wiFiConnected = WiFi.status() == WL_CONNECTED;
-	if (wiFiConnected)
-		mqttLoop();
 
 	state.setState(States::COMMUNICATION_ERR, !wiFiConnected || !isServerOnline || !connectedWithNode);
 
@@ -90,6 +88,8 @@ void callback(SubTopic topic, String message)
 		break;
 	case SubTopic::COMMAND_CANCEL_CALIBRATION:
 		scale.cancelCalibration();
+		break;
+	default:
 		break;
 	}
 }

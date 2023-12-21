@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <functional>
-#include <map>
 #include <WiFi.h>
 #include <PubSubClient.h>
 

@@ -1,40 +1,35 @@
 #include "MqttUtils.h"
 
-// Combine enum values with MQTT topics
-std::map<PubTopic, const char *> PubTopicMap{
-	{PubTopic::SCALE_OFFSET, ("/" + WiFi.macAddress() + "/calibration/scaleOffset").c_str()},
-	{PubTopic::SCALE_FACTOR, ("/" + WiFi.macAddress() + "/calibration/scaleValue").c_str()},
-	{PubTopic::WEIGHT_UPDATE, ("/" + WiFi.macAddress() + "/currentWeight").c_str()},
-	{PubTopic::REGISTER_DEVICE, "/devices"}};
-
-// Combine enum values with MQTT topics
-std::map<SubTopic, const char *> SubTopicMap{
-	{SubTopic::SERVER_ONLINE, "/server/online"},
-	{SubTopic::DEVICE_REGISTERED, ("/" + WiFi.macAddress()).c_str()},
-	{SubTopic::COMMAND_CALC_OFFSET, ("/" + WiFi.macAddress() + "/command/CalcOffset").c_str()},
-	{SubTopic::COMMAND_CALC_FACTOR, ("/" + WiFi.macAddress() + "/command/CalibrateScale").c_str()},
-	{SubTopic::COMMAND_APPLY_CALIBRATION, ("/" + WiFi.macAddress() + "/command/ApplyCalibration").c_str()},
-	{SubTopic::COMMAND_CANCEL_CALIBRATION, ("/" + WiFi.macAddress() + "/command/CancelCalibration").c_str()}};
-
 // convert received topic to enum
 const SubTopic getSubTopic(const char *topic)
 {
-	// Check each entry if it is the topic
-	for (auto i = SubTopicMap.begin(); i != SubTopicMap.end(); ++i)
-	{
-		if (i->second == topic)
-			return i->first;
-	}
-
 	// Notify user using serial
 	Serial.print("Received topic '");
 	Serial.print(topic);
 	Serial.println("' is yet undefined");
 
+	if (strcmp(topic, "/server/online") == 0)
+		return SubTopic::SERVER_ONLINE;
+
+	const String topicStr(topic);
+	const String deviceID = "/" + WiFi.macAddress();
+
+	if (topicStr == deviceID)
+		return SubTopic::DEVICE_REGISTERED;
+	if (topicStr == deviceID + "/command/CalcOffset")
+		return SubTopic::COMMAND_CALC_OFFSET;
+	if (topicStr == deviceID + "/command/CalibrateScale")
+		return SubTopic::COMMAND_CALC_FACTOR;
+	if (topicStr == deviceID + "/command/ApplyCalibration")
+		return SubTopic::COMMAND_APPLY_CALIBRATION;
+	if (topicStr == deviceID + "/command/CancelCalibration")
+		return SubTopic::COMMAND_CANCEL_CALIBRATION;
+
 	return SubTopic::UNDEFINED;
 }
 
 // Necessary objects for mqtt communication
+IPAddress mqttServer(SERVER_IP);
 WiFiClient wiFiClient;
 PubSubClient mqttClient(wiFiClient);
 
@@ -47,14 +42,15 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
 	String message;
 	for (int i = 0; i < length; i++)
 	{
-		message += (char)message[i];
+		message += (char)payload[i];
 	}
 
 	// Print topic and message for debug reasons
 	Serial.print("Message arrived on topic: '");
 	Serial.print(topic);
 	Serial.print("' Message: '");
-	Serial.println(message);
+	Serial.print(message);
+	Serial.println("'");
 
 	// Forward callback to the user
 	subCallback(getSubTopic(topic), message);
@@ -63,67 +59,74 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
 // Set broker and callback
 void setupMqtt(SubCallback callback)
 {
-	IPAddress mqttServer(SERVER_IP);
+	subCallback = callback;
+
 	mqttClient.setServer(mqttServer, 1883);
 	mqttClient.setCallback(mqttCallback);
 }
 
 void mqttLoop()
 {
+
+	if (WiFi.status() != WL_CONNECTED)
+		return;
+
 	// This function has to be called repeatedly for the broker to work
 	mqttClient.loop();
 
 	if (mqttClient.connected())
+	{
 		return;
+	}
 
-	const char *willTopic = ("/" + WiFi.macAddress() + "/online").c_str();
+	String willTopic = ("/" + WiFi.macAddress() + "/online").c_str();
 
 	// Reconnect to broker if it is not already connected
-	if (mqttClient.connect(WiFi.macAddress().c_str(), MQTT_USER, MQTT_PASS, willTopic, 1, true, "disconnected"))
+
+	if (mqttClient.connect(WiFi.macAddress().c_str(), MQTT_USER, MQTT_PASS, willTopic.c_str(), 1, true, "disconnected"))
+	// if (mqttClient.connect(WiFi.macAddress().c_str(), MQTT_USER, MQTT_PASS))
 	{
 		// Subscribe to all SubTopics
-		for (auto i = SubTopicMap.begin(); i != SubTopicMap.end(); ++i)
-		{
-			Serial.print("Subscribe to: ");
-			Serial.println(i->second);
-			mqttClient.subscribe(i->second);
-		}
+		mqttClient.subscribe(("/" + WiFi.macAddress() + "/#").c_str());
 
 		// Update last will topic to be connected
-		mqttClient.publish(willTopic, "connected", true);
+		mqttClient.publish(willTopic.c_str(), "connected", true);
 	}
 	else
 	{
 		// Print connection error
 		Serial.print("failed, rc=");
 		Serial.println(mqttClient.state());
-		delay(1000);
+		Serial.print("IP-Address: ");
+		Serial.println(WiFi.localIP());
+		// delay(1000);
 	}
 }
 
-// TODO: Make this more generic
 void publish(PubTopic topic, String payload, bool retain)
 {
-	const char *topicStr = PubTopicMap.find(topic)->second;
+	if (topic == PubTopic::REGISTER_DEVICE)
+	{
+		mqttClient.publish("/devices", WiFi.macAddress().c_str());
+		Serial.println("Device published register");
+		return;
+	}
 
-	Serial.print("Published topic '");
-	Serial.print(topicStr);
-	Serial.print("' with payload '");
-	Serial.print(payload.c_str());
-	Serial.print("' ");
-	Serial.print(retain ? "with" : "without");
-	Serial.print(" retain flag");
-
+	String topicStr = "/" + WiFi.macAddress();
 	switch (topic)
 	{
 		// To register this device we send the server our mac address
-	case PubTopic::REGISTER_DEVICE:
-		mqttClient.publish(topicStr, WiFi.macAddress().c_str());
+	case PubTopic::SCALE_OFFSET:
+		topicStr += "/calibration/scaleOffset";
 		break;
-
+	case PubTopic::SCALE_FACTOR:
+		topicStr += "/calibration/scaleValue";
+		break;
+	case PubTopic::WEIGHT_UPDATE:
+		topicStr += "/currentWeight";
+		break;
 	default:
-		// All other messages will be forwarded
-		mqttClient.publish(topicStr, payload.c_str(), retain);
-		break;
+		return;
 	}
+	mqttClient.publish(topicStr.c_str(), payload.c_str(), retain);
 }
