@@ -105,6 +105,15 @@ void mqttLoop()
 void publish(PubTopic topic, String payload, bool retain)
 {
 	const char *topicStr = PubTopicMap.find(topic)->second;
+
+	Serial.print("Published topic '");
+	Serial.print(topicStr);
+	Serial.print("' with payload '");
+	Serial.print(payload.c_str());
+	Serial.print("' ");
+	Serial.print(retain ? "with" : "without");
+	Serial.print(" retain flag");
+
 	switch (topic)
 	{
 		// To register this device we send the server our mac address
