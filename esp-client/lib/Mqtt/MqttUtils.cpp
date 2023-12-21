@@ -5,8 +5,7 @@ const SubTopic getSubTopic(const char *topic)
 {
 	// Notify user using serial
 	Serial.print("Received topic '");
-	Serial.print(topic);
-	Serial.println("' is yet undefined");
+	Serial.println(topic);
 
 	if (strcmp(topic, "/server/online") == 0)
 		return SubTopic::SERVER_ONLINE;
