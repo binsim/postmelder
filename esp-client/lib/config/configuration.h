@@ -17,7 +17,7 @@
 #define SCALE_DATA_PIN 32
 #define SCALE_CLOCK_PIN 33
 
-#define SCALE_WAIT_TIME 10000 //time in ms how long the scale waits after a weight change to report final weight
+#define SCALE_WAIT_TIME 5000 //time in ms how long the scale waits after a weight change to report final weight
 
 // -----------------------  State Settings --------------------------- //
 #define R_LED_PIN 0
