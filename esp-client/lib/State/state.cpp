@@ -121,7 +121,7 @@ void State::loop()
 	static byte init_counter = 0;
 	if (this->isInit())
 	{
-		if (init_counter++ > 3)
+		if (init_counter++ > 10)
 		{
 			this->setState(States::INIT, false);
 		}
