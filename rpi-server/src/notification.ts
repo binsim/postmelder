@@ -126,11 +126,17 @@ export class NotificationService {
 
 		// The handler, if occupied changed
 		const changeHandler = (status: boolean) => {
-			if (status && !device.messageAlreadySent) {
-				logger.info(`${device.id} sent message due to being occupied`);
-				this.sendMessage(device).catch((err) => {
-					logger.error(err);
-				});
+			if (status) {
+				if (!device.messageAlreadySent) {
+					logger.info(
+						`${device.id} sent message due to being occupied`
+					);
+					this.sendMessage(device).catch((err) => {
+						logger.error(err);
+					});
+				}
+			} else {
+				device.messageAlreadySent = false;
 			}
 		};
 		const addDeviceToArr = (interval: CheckInterval | undefined) => {
