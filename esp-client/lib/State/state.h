@@ -10,6 +10,7 @@ enum States
 	OCCUPIED,
 	COMMUNICATION_ERR,
 	SCALE_ERR,
+	SCALE_CALIBRATION
 };
 
 class State
@@ -26,6 +27,7 @@ private:
 	bool isCommunicationError();
 	bool isScaleError();
 	bool isOccupied();
+	bool isScaleCalibration();
 	void setupLEDs();
 	void updateLEDs();
 	char c_currentState;
