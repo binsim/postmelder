@@ -138,13 +138,14 @@ export class NotificationService {
 			switch (interval) {
 				case 'immediately':
 					// Check if notification is waiting for being sent and send it
-					if (device.isOccupied && !device.messageAlreadySent)
+					if (device.isOccupied && !device.messageAlreadySent) {
 						logger.info(
 							`${device.id} sent message due to being occupied`
 						);
-					this.sendMessage(device).catch((err) => {
-						logger.error(err);
-					});
+						this.sendMessage(device).catch((err) => {
+							logger.error(err);
+						});
+					}
 
 					// Append handler
 					device.on('occupiedChanged', changeHandler);
@@ -361,6 +362,9 @@ export class NotificationService {
 	private checkForSendingMessage(devices: IDevice[]) {
 		devices.forEach((device) => {
 			if (device.isOccupied && !device.messageAlreadySent) {
+				logger.info(
+					`${device.id} sent message due to checkForSendingMessage`
+				);
 				this.sendMessage(device).catch((err) => {
 					logger.error(err);
 				});
