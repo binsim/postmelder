@@ -50,7 +50,7 @@ void loop()
 		float weight = scale.getCurrentWeight();
 
 		publish(PubTopic::WEIGHT_UPDATE, String(weight, 1), true);
-		state.setState(States::OCCUPIED, weight > 0);
+		state.setState(States::OCCUPIED, weight > 1);
 	}
 	state.loop();
 }
