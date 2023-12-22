@@ -154,6 +154,7 @@ export class NotificationService {
 			}
 
 			arr.push(device);
+			logger.info(`${device.id} has been added to notify on ${interval}`);
 		};
 		// execute function
 		addDeviceToArr(device.checkInterval!);
@@ -178,6 +179,9 @@ export class NotificationService {
 					arr = this._weeklyDevices;
 					break;
 			}
+			logger.info(
+				`${device.id} has been removed from notify on ${oldVal}`
+			);
 
 			// Remove device from array
 			let i = arr.indexOf(device);
