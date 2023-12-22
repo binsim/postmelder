@@ -127,6 +127,7 @@ export class NotificationService {
 		// The handler, if occupied changed
 		const changeHandler = (status: boolean) => {
 			if (status && !device.messageAlreadySent) {
+				logger.info(`${device.id} sent message due to being occupied`);
 				this.sendMessage(device).catch((err) => {
 					logger.error(err);
 				});
@@ -138,9 +139,12 @@ export class NotificationService {
 				case 'immediately':
 					// Check if notification is waiting for being sent and send it
 					if (device.isOccupied && !device.messageAlreadySent)
-						this.sendMessage(device).catch((err) => {
-							logger.error(err);
-						});
+						logger.info(
+							`${device.id} sent message due to being occupied`
+						);
+					this.sendMessage(device).catch((err) => {
+						logger.error(err);
+					});
 
 					// Append handler
 					device.on('occupiedChanged', changeHandler);
