@@ -122,7 +122,7 @@ export class NotificationService {
 		device.on('onlineChanged', async (state: boolean) => {
 			try {
 				await this.sendMessage(
-					[this.conf!.username as string],
+					device.subscriber,
 					'Device online state',
 					`${device.id} has changed its online state to ${
 						device.isOnline ? 'online' : 'offline'
