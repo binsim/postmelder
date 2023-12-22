@@ -83,6 +83,19 @@ void State::setState(States state, bool isActive)
 			this->c_currentState &= ~(1 << 1);
 		}
 		break;
+	case States::SCALE_CALIBRATION:
+		if (isActive)
+		{
+			if (this->isScaleCalibration())
+				return;
+			this->c_currentState |= 1 << 2;
+		}
+		else
+		{
+			if (!this->isScaleCalibration())
+				return;
+			this->c_currentState &= ~(1 << 2);
+		}
 
 	default:
 		Serial.print("Entered state is not defined: ");
@@ -110,6 +123,10 @@ bool State::isCommunicationError()
 bool State::isScaleError()
 {
 	return this->c_currentState & 1 << 6;
+}
+bool State::isScaleCalibration()
+{
+	return this->c_currentState & 1 << 2;
 }
 bool State::isError()
 {
@@ -142,6 +159,13 @@ void State::updateLEDs()
 		Serial.print("In Error");
 		ledcWrite(R_LEDC_CHANEL, LEDC_ON_DUTY);
 		ledcWrite(B_LEDC_CHANEL, LEDC_OFF_DUTY);
+		digitalWrite(G_LED_PIN, LOW);
+	}
+	else if (this->isScaleCalibration())
+	{
+		Serial.print("In Scale Calibration");
+		ledcWrite(R_LEDC_CHANEL, LEDC_OFF_DUTY);
+		ledcWrite(B_LEDC_CHANEL, LEDC_ON_DUTY);
 		digitalWrite(G_LED_PIN, LOW);
 	}
 	else if (this->isOccupied())

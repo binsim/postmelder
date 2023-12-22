@@ -80,15 +80,18 @@ void callback(SubTopic topic, String message)
 	}
 	case SubTopic::COMMAND_CALC_OFFSET:
 		publish(PubTopic::SCALE_OFFSET, String(scale.calibrateScaleOffset(), 2));
+		state.setState(States::SCALE_CALIBRATION, true);
 		break;
 	case SubTopic::COMMAND_CALC_FACTOR:
 		publish(PubTopic::SCALE_FACTOR, String(scale.calibrateScaleFactor(message.toInt()), 2));
 		break;
 	case SubTopic::COMMAND_APPLY_CALIBRATION:
 		scale.saveScaleValues();
+		state.setState(States::SCALE_CALIBRATION, false);
 		break;
 	case SubTopic::COMMAND_CANCEL_CALIBRATION:
 		scale.cancelCalibration();
+		state.setState(States::SCALE_CALIBRATION, false);
 		break;
 	default:
 		break;
