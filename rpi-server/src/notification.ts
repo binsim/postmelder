@@ -119,7 +119,12 @@ export class NotificationService {
 	 * @param device Device to add
 	 */
 	addDevice(device: IDevice) {
-		// The handler, if online changed
+		device.on('onlineChanged', (state: boolean) => {
+			// TODO: Send online Message
+			logger.info(`${device.id} online state sent via notification`);
+		});
+
+		// The handler, if occupied changed
 		const changeHandler = (status: boolean) => {
 			if (status && !device.messageAlreadySent) {
 				this.sendMessage(device).catch((err) => {
@@ -138,7 +143,7 @@ export class NotificationService {
 						});
 
 					// Append handler
-					device.on('onlineChanged', changeHandler);
+					device.on('occupiedChanged', changeHandler);
 					break;
 
 				// Select array for the device to be added in
@@ -165,7 +170,7 @@ export class NotificationService {
 			switch (oldVal) {
 				case 'immediately':
 					// remove handler
-					device.off('onlineChanged', changeHandler);
+					device.off('occupiedChanged', changeHandler);
 					break;
 
 				// Select array to remove device from
