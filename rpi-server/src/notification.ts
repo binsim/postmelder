@@ -119,9 +119,9 @@ export class NotificationService {
 	 * @param device Device to add
 	 */
 	addDevice(device: IDevice) {
-		device.on('onlineChanged', (state: boolean) => {
+		device.on('onlineChanged', async (state: boolean) => {
 			try {
-				this.sendMessage(
+				await this.sendMessage(
 					[this.conf!.username as string],
 					'Device online state',
 					`${device.id} has changed its online state to ${
