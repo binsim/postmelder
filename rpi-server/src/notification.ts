@@ -120,8 +120,18 @@ export class NotificationService {
 	 */
 	addDevice(device: IDevice) {
 		device.on('onlineChanged', (state: boolean) => {
-			// TODO: Send online Message
-			logger.info(`${device.id} online state sent via notification`);
+			try {
+				this.sendMessage(
+					[this.conf!.username as string],
+					'Device online state',
+					`${device.id} has changed its online state to ${
+						device.isOnline ? 'online' : 'offline'
+					}`
+				);
+				logger.info(`${device.id} online state sent via notification`);
+			} catch (error) {
+				logger.error(error);
+			}
 		});
 
 		// The handler, if occupied changed
@@ -131,7 +141,7 @@ export class NotificationService {
 					logger.info(
 						`${device.id} sent message due to being occupied`
 					);
-					this.sendMessage(device).catch((err) => {
+					this.sendDeviceMessage(device).catch((err) => {
 						logger.error(err);
 					});
 				}
@@ -148,7 +158,7 @@ export class NotificationService {
 						logger.info(
 							`${device.id} sent message due to being occupied`
 						);
-						this.sendMessage(device).catch((err) => {
+						this.sendDeviceMessage(device).catch((err) => {
 							logger.error(err);
 						});
 					}
@@ -215,15 +225,55 @@ export class NotificationService {
 	 * @returns Returns the result of sending the message
 	 */
 	async sendTestMessage(device: IDevice) {
-		return await this.sendMessage(device, true);
+		return await this.sendDeviceMessage(device, true);
 	}
-	private sendMessage(
+	private async sendDeviceMessage(
 		device: IDevice,
 		isTestMessage = false
 	): Promise<MailReturn> {
+		const info = await this.sendMessage(
+			device.subscriber,
+			NotificationService.insertVariables(
+				isTestMessage
+					? `Test: ${device.notificationTitle}`
+					: device.notificationTitle,
+				device
+			),
+			NotificationService.insertVariables(device.notificationBody, device)
+		);
+
+		// Log all rejected targets
+		if (info.rejected.length > 0) {
+			logger.warn(
+				`${
+					device.id
+				} send a message with rejected recipients [${info.rejected.join(
+					', '
+				)}]`
+			);
+		}
+		// Log all accepted targets
+		if (info.accepted.length > 0) {
+			logger.info(
+				`${
+					device.id
+				} send a message successfully to [${info.accepted.join(', ')}]`
+			);
+		}
+
+		// set sent to be true, to not send a message again
+		if (!isTestMessage) device.messageAlreadySent = true;
+
+		return info;
+	}
+	private sendMessage(
+		subscriber: string[],
+		subject: string | undefined,
+		text: string | undefined
+	): Promise<MailReturn> {
 		return new Promise(async (resolve, reject) => {
 			// To send a message, targets are necessary
-			if (device.subscriber!.length <= 0) {
+			if (subscriber!.length <= 0) {
 				reject(new Error('No target for message provided'));
 				return;
 			}
@@ -241,44 +291,15 @@ export class NotificationService {
 				return;
 			}
 
-			//TODO: Handle rejected recipients
 			try {
 				// Send the message
 				const info: MailReturn = await this.transporter!.sendMail({
 					from: this.conf.username,
-					to: device.subscriber!.join(', '),
-					subject: NotificationService.insertVariables(
-						isTestMessage
-							? `Test: ${device.notificationTitle}`
-							: device.notificationTitle,
-						device
-					),
-					text: NotificationService.insertVariables(
-						device.notificationBody,
-						device
-					),
+					to: subscriber!.join(', '),
+					subject,
+					text,
 				});
 
-				// Log all rejected targets
-				if (info.rejected.length > 0) {
-					logger.warn(
-						`${
-							device.id
-						} send a message with rejected recipients [${info.rejected.join(
-							', '
-						)}]`
-					);
-				}
-				// Log all accepted targets
-				if (info.accepted.length > 0) {
-					logger.info(
-						`${
-							device.id
-						} send a message successfully to [${info.accepted.join(
-							', '
-						)}]`
-					);
-				}
 				// Return for user information
 				resolve(info);
 			} catch (err) {
@@ -286,8 +307,6 @@ export class NotificationService {
 				reject(err);
 				return;
 			}
-			// set sent to be true, to not send a message again
-			if (!isTestMessage) device.messageAlreadySent = true;
 		});
 	}
 
@@ -371,7 +390,7 @@ export class NotificationService {
 				logger.info(
 					`${device.id} sent message due to checkForSendingMessage`
 				);
-				this.sendMessage(device).catch((err) => {
+				this.sendDeviceMessage(device).catch((err) => {
 					logger.error(err);
 				});
 			}
