@@ -79,8 +79,8 @@ void callback(SubTopic topic, String message)
 		break;
 	}
 	case SubTopic::COMMAND_CALC_OFFSET:
-		publish(PubTopic::SCALE_OFFSET, String(scale.calibrateScaleOffset(), 2));
 		state.setState(States::SCALE_CALIBRATION, true);
+		publish(PubTopic::SCALE_OFFSET, String(scale.calibrateScaleOffset(), 2));
 		break;
 	case SubTopic::COMMAND_CALC_FACTOR:
 		publish(PubTopic::SCALE_FACTOR, String(scale.calibrateScaleFactor(message.toInt()), 2));
