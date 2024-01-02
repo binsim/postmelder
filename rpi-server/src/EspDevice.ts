@@ -166,7 +166,7 @@ export class Device extends EventEmitter implements IDevice {
 				// Get the current time for displaying it at the webinterface
 				const timeStamp = Date.now().valueOf();
 
-				if (newWeight <= 0) {
+				if (newWeight <= Number(process.env.SCALE_THRESHOLD ?? '1')) {
 					// The box has been emptied clear history and set occupied to false
 					this.lastEmptied = timeStamp;
 					this.history.splice(0, this.history.length);

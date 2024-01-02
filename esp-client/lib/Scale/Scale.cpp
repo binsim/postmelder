@@ -122,23 +122,42 @@ float Scale::getCurrentWeight()
 {
 	return this->weight;
 }
+
 bool Scale::weightChanged()
 {
+	static unsigned long time;
+	static bool printed;
+
 	// FIXME: It does not get detected when no scale is connected
-	if (!this->scale.is_ready())
+	if (!this->scale.is_ready()) // quit if scale is not ready
 		return false;
 
-	float newWeight = this->readWeight();
-	if (!(newWeight >= this->weight + SCALE_THRESHOLD || newWeight <= this->weight - SCALE_THRESHOLD))
+	float newWeight = this->readWeight(); // read current weight from scale
+
+	if ((newWeight >= this->weight + SCALE_THRESHOLD || newWeight <= this->weight - SCALE_THRESHOLD)) // if significant weight change has been detected
+	{
+		this->weight = newWeight; // save new weight into old weight
+
+		time = millis(); // restart timer
+
+		printed = false; //enable MQTT publishing
+
+		Serial.print("weight change detected: "); // print to serial monitor
+		Serial.print(this->weight);
+		Serial.println("g");
+	}
+
+	if ((time + SCALE_WAIT_TIME) <= millis() && !printed) // if timer has run out (no weight change in the last x seconds)
+	{
+		Serial.print("final weight: "); // print to serial monitor
+		Serial.print(this->weight);
+		Serial.println("g");
+
+		printed = true; //disable MQTT publishing once published
+		return true;
+	}
+	else
+	{
 		return false;
-
-	// New weight is out of threshold
-	this->weight = newWeight;
-
-	// Print to serial monitor
-	Serial.print("Change detected, weight: ");
-	Serial.print(weight, 1);
-	Serial.println("g");
-
-	return true;
+	}
 }
