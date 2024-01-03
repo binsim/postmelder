@@ -119,12 +119,34 @@ export class NotificationService {
 	 * @param device Device to add
 	 */
 	addDevice(device: IDevice) {
-		// The handler, if online changed
+		device.on('onlineChanged', async (state: boolean) => {
+			try {
+				await this.sendMessage(
+					device.subscriber,
+					'Device online state',
+					`${device.id} has changed its online state to ${
+						device.isOnline ? 'online' : 'offline'
+					}`
+				);
+				logger.info(`${device.id} online state sent via notification`);
+			} catch (error) {
+				logger.error(error);
+			}
+		});
+
+		// The handler, if occupied changed
 		const changeHandler = (status: boolean) => {
-			if (status && !device.messageAlreadySent) {
-				this.sendMessage(device).catch((err) => {
-					logger.error(err);
-				});
+			if (status) {
+				if (!device.messageAlreadySent) {
+					logger.info(
+						`${device.id} sent message due to being occupied`
+					);
+					this.sendDeviceMessage(device).catch((err) => {
+						logger.error(err);
+					});
+				}
+			} else {
+				device.messageAlreadySent = false;
 			}
 		};
 		const addDeviceToArr = (interval: CheckInterval | undefined) => {
@@ -132,13 +154,17 @@ export class NotificationService {
 			switch (interval) {
 				case 'immediately':
 					// Check if notification is waiting for being sent and send it
-					if (device.isOccupied && !device.messageAlreadySent)
-						this.sendMessage(device).catch((err) => {
+					if (device.isOccupied && !device.messageAlreadySent) {
+						logger.info(
+							`${device.id} sent message due to being occupied`
+						);
+						this.sendDeviceMessage(device).catch((err) => {
 							logger.error(err);
 						});
+					}
 
 					// Append handler
-					device.on('onlineChanged', changeHandler);
+					device.on('occupiedChanged', changeHandler);
 					break;
 
 				// Select array for the device to be added in
@@ -154,6 +180,7 @@ export class NotificationService {
 			}
 
 			arr.push(device);
+			logger.info(`${device.id} has been added to notify on ${interval}`);
 		};
 		// execute function
 		addDeviceToArr(device.checkInterval!);
@@ -164,7 +191,7 @@ export class NotificationService {
 			switch (oldVal) {
 				case 'immediately':
 					// remove handler
-					device.off('onlineChanged', changeHandler);
+					device.off('occupiedChanged', changeHandler);
 					break;
 
 				// Select array to remove device from
@@ -178,6 +205,9 @@ export class NotificationService {
 					arr = this._weeklyDevices;
 					break;
 			}
+			logger.info(
+				`${device.id} has been removed from notify on ${oldVal}`
+			);
 
 			// Remove device from array
 			let i = arr.indexOf(device);
@@ -195,15 +225,55 @@ export class NotificationService {
 	 * @returns Returns the result of sending the message
 	 */
 	async sendTestMessage(device: IDevice) {
-		return await this.sendMessage(device, true);
+		return await this.sendDeviceMessage(device, true);
 	}
-	private sendMessage(
+	private async sendDeviceMessage(
 		device: IDevice,
 		isTestMessage = false
 	): Promise<MailReturn> {
+		const info = await this.sendMessage(
+			device.subscriber,
+			NotificationService.insertVariables(
+				isTestMessage
+					? `Test: ${device.notificationTitle}`
+					: device.notificationTitle,
+				device
+			),
+			NotificationService.insertVariables(device.notificationBody, device)
+		);
+
+		// Log all rejected targets
+		if (info.rejected.length > 0) {
+			logger.warn(
+				`${
+					device.id
+				} send a message with rejected recipients [${info.rejected.join(
+					', '
+				)}]`
+			);
+		}
+		// Log all accepted targets
+		if (info.accepted.length > 0) {
+			logger.info(
+				`${
+					device.id
+				} send a message successfully to [${info.accepted.join(', ')}]`
+			);
+		}
+
+		// set sent to be true, to not send a message again
+		if (!isTestMessage) device.messageAlreadySent = true;
+
+		return info;
+	}
+	private sendMessage(
+		subscriber: string[],
+		subject: string | undefined,
+		text: string | undefined
+	): Promise<MailReturn> {
 		return new Promise(async (resolve, reject) => {
 			// To send a message, targets are necessary
-			if (device.subscriber!.length <= 0) {
+			if (subscriber!.length <= 0) {
 				reject(new Error('No target for message provided'));
 				return;
 			}
@@ -221,44 +291,15 @@ export class NotificationService {
 				return;
 			}
 
-			//TODO: Handle rejected recipients
 			try {
 				// Send the message
 				const info: MailReturn = await this.transporter!.sendMail({
 					from: this.conf.username,
-					to: device.subscriber!.join(', '),
-					subject: NotificationService.insertVariables(
-						isTestMessage
-							? `Test: ${device.notificationTitle}`
-							: device.notificationTitle,
-						device
-					),
-					text: NotificationService.insertVariables(
-						device.notificationBody,
-						device
-					),
+					to: subscriber!.join(', '),
+					subject,
+					text,
 				});
 
-				// Log all rejected targets
-				if (info.rejected.length > 0) {
-					logger.warn(
-						`${
-							device.id
-						} send a message with rejected recipients [${info.rejected.join(
-							', '
-						)}]`
-					);
-				}
-				// Log all accepted targets
-				if (info.accepted.length > 0) {
-					logger.info(
-						`${
-							device.id
-						} send a message successfully to [${info.accepted.join(
-							', '
-						)}]`
-					);
-				}
 				// Return for user information
 				resolve(info);
 			} catch (err) {
@@ -266,8 +307,6 @@ export class NotificationService {
 				reject(err);
 				return;
 			}
-			// set sent to be true, to not send a message again
-			if (!isTestMessage) device.messageAlreadySent = true;
 		});
 	}
 
@@ -348,7 +387,10 @@ export class NotificationService {
 	private checkForSendingMessage(devices: IDevice[]) {
 		devices.forEach((device) => {
 			if (device.isOccupied && !device.messageAlreadySent) {
-				this.sendMessage(device).catch((err) => {
+				logger.info(
+					`${device.id} sent message due to checkForSendingMessage`
+				);
+				this.sendDeviceMessage(device).catch((err) => {
 					logger.error(err);
 				});
 			}
