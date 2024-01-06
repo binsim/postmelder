@@ -23,6 +23,9 @@ public:
 	void saveScaleValues();
 	void cancelCalibration();
 
+	//Scale error check
+	bool isScaleError();
+
 #ifdef WIPE
 	void wipeFlash();
 #endif // WIPE
@@ -37,6 +40,8 @@ private:
 
 	float weight;
 	float readWeight();
+
+	int hops;
 };
 
 #endif // SCALE_H
