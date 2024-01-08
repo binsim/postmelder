@@ -145,7 +145,11 @@ bool Scale::weightChanged()
 		Serial.print(this->weight);
 		Serial.println("g");
 
+if(hops <= SCALE_ERROR_HOPS) //to prevent int overflow
+{
 		hops++; //increase counter
+}
+
 	}
 
 	if ((time + SCALE_WAIT_TIME) <= millis() && !printed) // if timer has run out (no weight change in the last x seconds)

@@ -41,7 +41,7 @@ private:
 	float weight;
 	float readWeight();
 
-	int hops;
+	unsigned int hops;
 };
 
 #endif // SCALE_H
