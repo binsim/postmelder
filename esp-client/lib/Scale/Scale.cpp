@@ -145,10 +145,10 @@ bool Scale::weightChanged()
 		Serial.print(this->weight);
 		Serial.println("g");
 
-if(hops <= SCALE_ERROR_HOPS) //to prevent int overflow
-{
-		hops++; //increase counter
-}
+		if(hops <= SCALE_ERROR_HOPS) //to prevent int overflow
+		{
+			hops++; //increase counter
+		}
 
 	}
 
@@ -171,13 +171,6 @@ if(hops <= SCALE_ERROR_HOPS) //to prevent int overflow
 
 bool Scale::isScaleError() //reports true when the scale is probably misfunctioning
 {
-	if(hops >= SCALE_ERROR_HOPS)
-	{
-		Serial.println("ScaleError detected");
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return (hops >= SCALE_ERROR_HOPS);
+
 }
