@@ -52,6 +52,8 @@ void loop()
 		publish(PubTopic::WEIGHT_UPDATE, String(weight, 1), true);
 		state.setState(States::OCCUPIED, weight > 1);
 	}
+
+	state.setState(States::SCALE_ERR, scale.isScaleError()); //true when scale has an error
 	state.loop();
 }
 
