@@ -128,7 +128,6 @@ bool Scale::weightChanged()
 	static unsigned long time;
 	static bool printed;
 
-	// FIXME: It does not get detected when no scale is connected
 	if (!this->scale.is_ready()) // quit if scale is not ready
 		return false;
 
@@ -145,10 +144,18 @@ bool Scale::weightChanged()
 		Serial.print("weight change detected: "); // print to serial monitor
 		Serial.print(this->weight);
 		Serial.println("g");
+
+		if(hops <= SCALE_ERROR_HOPS) //to prevent int overflow
+		{
+			hops++; //increase counter
+		}
+
 	}
 
 	if ((time + SCALE_WAIT_TIME) <= millis() && !printed) // if timer has run out (no weight change in the last x seconds)
 	{
+		hops = 0; //reset counter
+
 		Serial.print("final weight: "); // print to serial monitor
 		Serial.print(this->weight);
 		Serial.println("g");
@@ -160,4 +167,10 @@ bool Scale::weightChanged()
 	{
 		return false;
 	}
+}
+
+bool Scale::isScaleError() //reports true when the scale is probably misfunctioning
+{
+	return (hops >= SCALE_ERROR_HOPS);
+
 }
