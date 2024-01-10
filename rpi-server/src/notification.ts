@@ -145,8 +145,6 @@ export class NotificationService {
 						logger.error(err);
 					});
 				}
-			} else {
-				device.messageAlreadySent = false;
 			}
 		};
 		const addDeviceToArr = (interval: CheckInterval | undefined) => {
@@ -386,6 +384,9 @@ export class NotificationService {
 	 */
 	private checkForSendingMessage(devices: IDevice[]) {
 		devices.forEach((device) => {
+			logger.info(
+				`Checking device: ${device.id}: {occupied: ${device.isOccupied}, messageAlreadySent: ${device.messageAlreadySent}}`
+			);
 			if (device.isOccupied && !device.messageAlreadySent) {
 				logger.info(
 					`${device.id} sent message due to checkForSendingMessage`

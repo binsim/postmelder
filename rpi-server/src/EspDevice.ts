@@ -172,6 +172,8 @@ export class Device extends EventEmitter implements IDevice {
 					this.history.splice(0, this.history.length);
 					this.emit('occupiedChanged', false);
 					logger.info(`${this._device.id} has been emptied`);
+
+					this.messageAlreadySent = false;
 				} else {
 					// A new item has been inserted update the list
 					this.history.push({ timeStamp, weight: newWeight });
