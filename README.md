@@ -127,3 +127,17 @@ Weitere Einstellung können mit folgenden Befehl getätigt werden:
 ```bash
 sudo nmtui
 ```
+
+# Elektrischer Aufbau
+
+## ESP32 und Wägezelle
+
+Zum Einsatz kommt ein ESP32 DevkitC V4 und eine 5kg-Wägezelle mit dem HX711 Wägezellenverstärker. Als Statusanzeige dient eine RGB-LED.
+
+![ESP32](https://github.com/binsim/postmelder/assets/148945984/db4f611c-a416-498d-8ce0-02bcdacfa60d)
+
+## Raspberry Pi
+
+Zum Einsatz kommt ein Raspberry Pi 4B. Als Statusanzeige dient eine RGB-LED.
+
+![RaspberryPi](https://github.com/binsim/postmelder/assets/148945984/aaae5b55-50ee-48cd-8737-964f64a09dfe)
