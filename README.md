@@ -141,3 +141,36 @@ Zum Einsatz kommt ein ESP32 DevkitC V4 und eine 5kg-Wägezelle mit dem HX711 Wä
 Zum Einsatz kommt ein Raspberry Pi 4B. Als Statusanzeige dient eine RGB-LED.
 
 ![RaspberryPi](https://github.com/binsim/postmelder/assets/148945984/aaae5b55-50ee-48cd-8737-964f64a09dfe)
+
+# Konfiguration und Anzeige der Postfächer
+
+Zur Konfiguration der Postfächer steht eine Website zur Verfügung. Diese ist erreichbar unter [http://POSTMELDER_IP:8080]. Desweiteren unterstüzt die Website eine automatische Erkennung von neuen Postfächern diese dann entsprechen konfiguriert werden können (siehe folgende Punkte).
+
+## E-Mail
+
+Zum senden von E-Mail muss ein SMTP-Sender hinzugefügt werden. Dies ist durch folgende Ansicht möglich.
+
+![SMTP-Sender_config]()
+
+## Postfach
+
+Des weiteren ist es möglich, den Test sowie den Titel des E-Mail Benachrichtigung für jedes einzele Postfach zu bearbeiten. Dies geschieht unter folgender Ansicht. Hierbei werden auch Variablen unterstüzt.
+
+| Variable | Wert |
+| -------- | ---- |
+| `{BOXNR}` | Die entsprechende Boxnumber des Postfach |
+| `{WEIGHT}` | Das im Moment des Sendens aktuelle Gewicht |
+| `{LASTEMPTIED}` | Der Zeitpunkt der letzten Entleerung im Zeitformat der Raspberry Pi's |
+| `{HISTORY}` | Die Gewichtsänderungen mit entsprechenden Zeitpunkten seit der letzten Entleerung |
+
+Um den Empfänger der E-Mail vor zu viele Nachrichten zu schützen ist es auch möglich, das Überprüfungsintervall zu ändern, hierfür gibt es folgende möglichkeiten
+
+| Wert | Beschreibung |
+| ---- | ------------ |
+| `immediatly` | Es wird direkt nach dem das Postfach zu belegt wird |
+| `hourly` | Zur jeden vollen Stunde wird auf Statusänderung geprüft |
+| `daily` | Es wird täglich auf Statusänderung geprüft |
+| `weekly` | Es wird wöchentlich auf Statusänderung geprüft |
+
+![Postfach_config]()
+
