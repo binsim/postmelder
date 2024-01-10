@@ -12,9 +12,9 @@ export interface IStateService {
 }
 export class StateService implements IStateService {
 	private static _instance: StateService;
-	private r_pin = Number(process.env.SERVER_R_PIN);
-	private g_pin = Number(process.env.SERVER_G_PIN);
-	private b_pin = Number(process.env.SERVER_B_PIN);
+	private r_pin = Number(process.env.SERVER_R_PIN || '17');
+	private g_pin = Number(process.env.SERVER_G_PIN || '27');
+	private b_pin = Number(process.env.SERVER_B_PIN || '22');
 
 	private deviceList: IDevice[] = [];
 	private _externalError = false;
