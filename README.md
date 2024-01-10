@@ -144,7 +144,7 @@ Zum Einsatz kommt ein Raspberry Pi 4B. Als Statusanzeige dient eine RGB-LED.
 
 # Konfiguration und Anzeige der Postfächer
 
-Zur Konfiguration der Postfächer steht eine Website zur Verfügung. Diese ist erreichbar unter [http://POSTMELDER_IP:8080]. Desweiteren unterstüzt die Website eine automatische Erkennung von neuen Postfächern diese dann entsprechen konfiguriert werden können (siehe folgende Punkte).
+Zur Konfiguration der Postfächer steht eine Website zur Verfügung. Diese ist erreichbar unter <http://POSTMELDER_IP:8080>. Desweiteren unterstüzt die Website eine automatische Erkennung von neuen Postfächern diese dann entsprechen konfiguriert werden können (siehe folgende Punkte).
 
 ## E-Mail
 
