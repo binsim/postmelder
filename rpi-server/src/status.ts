@@ -55,11 +55,13 @@ export class StateService implements IStateService {
 		device.on('onlineChanged', (value) => {
 			if (!value) {
 				this.deviceList.push(device);
+				logger.warn(`${device.id} got offline`);
 			} else {
 				this.deviceList.splice(
 					this.deviceList.indexOf(device) as number,
 					1
 				);
+				logger.info(`${device.id} got online`);
 			}
 			this.updateColor();
 		});
@@ -73,6 +75,11 @@ export class StateService implements IStateService {
 	 */
 	mqttOnlineStateChanged(isConnected: boolean) {
 		this.mqttError = !isConnected;
+		if (this.mqttError) {
+			logger.warn('Lost MQTT connection');
+		} else {
+			logger.info('MQTT connection established');
+		}
 		this.updateColor();
 	}
 	/**
@@ -83,6 +90,11 @@ export class StateService implements IStateService {
 	 */
 	transporterErrorChanged(isError: boolean) {
 		this.transporterError = isError;
+		if (this.transporterError) {
+			logger.warn('SMTP Transporter not ok');
+		} else {
+			logger.info('SMTP Transporter ok');
+		}
 		this.updateColor();
 	}
 
