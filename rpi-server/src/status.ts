@@ -1,6 +1,7 @@
 import { init, open, write, OUTPUT, LOW, HIGH } from 'rpio';
 import { IDevice } from './EspDevice';
 import { logger } from './logging';
+import { resolve } from 'dns';
 
 export interface IStateService {
 	get externalError(): boolean;
@@ -19,6 +20,7 @@ export class StateService implements IStateService {
 	private deviceList: IDevice[] = [];
 	private mqttError = false;
 	private transporterError = false;
+	private internetConnectionError = false;
 
 	private constructor() {
 		// TODO: Log warnings of this function
@@ -30,6 +32,22 @@ export class StateService implements IStateService {
 		open(this.b_pin, OUTPUT, LOW);
 
 		this.updateColor();
+
+		setInterval(() => {
+			resolve('google.com', (err, addr) => {
+				if (err) {
+					if (this.internetConnectionError) return;
+
+					logger.warn('Internet connection lost');
+					this.internetConnectionError = true;
+				} else {
+					if (!this.internetConnectionError) return;
+
+					logger.info('Internet connection established');
+					this.internetConnectionError = false;
+				}
+			});
+		}, 60_000);
 	}
 
 	public static get Instance(): StateService {
@@ -37,7 +55,11 @@ export class StateService implements IStateService {
 		return this._instance;
 	}
 	get externalError() {
-		return this.mqttError || this.transporterError;
+		return (
+			this.mqttError ||
+			this.transporterError ||
+			this.internetConnectionError
+		);
 	}
 	get internalError() {
 		return this.deviceList.length > 0;
