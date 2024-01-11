@@ -253,6 +253,7 @@ async function boxDetails(e, deviceId) {
 
 	// Visualize history
 	if (response.history.length > 0) {
+		history_ul.innerHTML = '';
 		// Show history with weight and date
 		response.history.forEach((i) => {
 			const li = document.createElement('li');
