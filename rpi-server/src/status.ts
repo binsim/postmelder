@@ -17,18 +17,10 @@ export class StateService implements IStateService {
 	private b_pin = Number(process.env.SERVER_B_PIN || '22');
 
 	private deviceList: IDevice[] = [];
-	private _externalError = false;
+	private mqttError = false;
+	private transporterError = false;
 
 	private constructor() {
-		if (!this.pinsDefined) {
-			logger.error(
-				`Can not use RGB-LED because a LED is undefined ${JSON.stringify(
-					{ r: this.r_pin, g: this.g_pin, b: this.b_pin }
-				)}`
-			);
-			return;
-		}
-
 		// TODO: Log warnings of this function
 		init({ close_on_exit: true, mapping: 'gpio' });
 
@@ -45,16 +37,13 @@ export class StateService implements IStateService {
 		return this._instance;
 	}
 	get externalError() {
-		return this._externalError;
+		return this.mqttError || this.transporterError;
 	}
 	get internalError() {
 		return this.deviceList.length > 0;
 	}
 	get isOk() {
 		return !this.externalError && !this.internalError;
-	}
-	private get pinsDefined() {
-		return !(isNaN(this.r_pin) || isNaN(this.g_pin) || isNaN(this.g_pin));
 	}
 
 	/**
@@ -66,11 +55,13 @@ export class StateService implements IStateService {
 		device.on('onlineChanged', (value) => {
 			if (!value) {
 				this.deviceList.push(device);
+				logger.warn(`${device.id} got offline`);
 			} else {
 				this.deviceList.splice(
 					this.deviceList.indexOf(device) as number,
 					1
 				);
+				logger.info(`${device.id} got online`);
 			}
 			this.updateColor();
 		});
@@ -83,7 +74,27 @@ export class StateService implements IStateService {
 	 * @param isConnected Value of mqtt online state
 	 */
 	mqttOnlineStateChanged(isConnected: boolean) {
-		this._externalError = !isConnected;
+		this.mqttError = !isConnected;
+		if (this.mqttError) {
+			logger.warn('Lost MQTT connection');
+		} else {
+			logger.info('MQTT connection established');
+		}
+		this.updateColor();
+	}
+	/**
+	 * Execute this if transporter state changed
+	 * Will update colors depending on state
+	 *
+	 * @param isError Wether transporter is in error state
+	 */
+	transporterErrorChanged(isError: boolean) {
+		this.transporterError = isError;
+		if (this.transporterError) {
+			logger.warn('SMTP Transporter not ok');
+		} else {
+			logger.info('SMTP Transporter ok');
+		}
 		this.updateColor();
 	}
 
@@ -91,8 +102,6 @@ export class StateService implements IStateService {
 	 * Update GPIO output depending on states
 	 */
 	private updateColor() {
-		if (!this.pinsDefined) return;
-
 		write(this.r_pin, this.externalError ? HIGH : LOW);
 		write(this.g_pin, this.isOk ? HIGH : LOW);
 		write(this.b_pin, this.internalError ? HIGH : LOW);

@@ -5,6 +5,7 @@ import { scheduleJob } from 'node-schedule';
 import { CheckInterval, HistoryType, IDevice } from './EspDevice';
 import { HashData, decrypt } from './encrypt';
 import { logger } from './logging';
+import { StateService } from './status';
 
 export const DEFAULT_SMTP_PORT = 587;
 const CONFIG_FILE = 'data/mail.json';
@@ -285,6 +286,9 @@ export class NotificationService {
 			}
 			// The transporter needs to be online in order to send a message
 			if (!(await this.isConnected())) {
+				// Show error for user
+				StateService.Instance.transporterErrorChanged(true);
+
 				reject(new Error('Transporter is not ok'));
 				return;
 			}
@@ -297,6 +301,9 @@ export class NotificationService {
 					subject,
 					text,
 				});
+
+				// Clear transporter error if it exists
+				StateService.Instance.transporterErrorChanged(false);
 
 				// Return for user information
 				resolve(info);
