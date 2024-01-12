@@ -119,6 +119,7 @@ export declare interface IDevice extends JSON_Device {
 export class Device extends EventEmitter implements IDevice {
 	private _device: JSON_Device;
 	private _isOnline: boolean = false;
+	private _inCalibration: boolean = false;
 	messageAlreadySent: boolean = false;
 
 	constructor(device: JSON_Device) {
@@ -173,6 +174,7 @@ export class Device extends EventEmitter implements IDevice {
 				}
 				break;
 			case 'currentWeight':
+				if (this._inCalibration) break;
 				// Received new weight
 				const newWeight = Number(payload.toString());
 
@@ -314,6 +316,9 @@ export class Device extends EventEmitter implements IDevice {
 		};
 	}
 	public calcScaleOffset(): Promise<number> {
+		// Start calibration
+		this._inCalibration = true;
+
 		return new Promise((resolve, reject) => {
 			if (!this.isOnline) {
 				reject('Device is offline');
@@ -341,6 +346,9 @@ export class Device extends EventEmitter implements IDevice {
 		});
 	}
 	public calcScaleWeight(weight: number): Promise<number> {
+		// Start calibration
+		this._inCalibration = true;
+
 		return new Promise((resolve, reject) => {
 			if (!this.isOnline) {
 				reject('Device is offline');
@@ -380,12 +388,20 @@ export class Device extends EventEmitter implements IDevice {
 				})
 			)
 		);
+		// Clear history
+		this.history.splice(0, this.history.length);
+		// Calibration ended
+		this._inCalibration = false;
 	}
 	public cancelCalibration(): void {
 		MQTTService.Instance.publish(
 			`/${this._device.id}/command/CancelCalibration`,
 			Buffer.from('')
 		);
+		// Clear history
+		this.history.splice(0, this.history.length);
+		// Calibration enden
+		this._inCalibration = false;
 	}
 }
 
