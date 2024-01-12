@@ -4,6 +4,10 @@ import { MQTTService } from './mqttService';
 import { logger } from './logging';
 
 const CONFIG_FILE = 'data/esp-clients.json';
+const NOTIFICATION_DEFAULT_TITLE =
+	'Ihr Postfach mit der Nummer {BOXNR} ist belegt';
+const NOTIFICATION_DEFAULT_BODY =
+	'Aktuelles Gewicht: {WEIGHT}g\nLetzte Leerung: {LASTEMPTIED}\nHistorie: {HISTORY}';
 
 export const CheckIntervals = [
 	'immediately',
@@ -71,6 +75,14 @@ export declare interface IDevice extends JSON_Device {
 	 * Wether the message has already been sent or is still pending
 	 */
 	messageAlreadySent: boolean;
+	/**
+	 * Title of the notification
+	 */
+	notificationTitle: string;
+	/**
+	 * Body of the notification
+	 */
+	notificationBody: string;
 
 	// Subscribing to events
 	on(
@@ -217,13 +229,13 @@ export class Device extends EventEmitter implements IDevice {
 		this._device.subscriber = value;
 	}
 	get notificationTitle() {
-		return this._device.notificationTitle;
+		return this._device.notificationTitle ?? NOTIFICATION_DEFAULT_TITLE;
 	}
 	set notificationTitle(value) {
 		this._device.notificationTitle = value;
 	}
 	get notificationBody() {
-		return this._device.notificationBody;
+		return this._device.notificationBody ?? NOTIFICATION_DEFAULT_BODY;
 	}
 	set notificationBody(value) {
 		this._device.notificationBody = value;
