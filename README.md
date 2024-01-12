@@ -4,8 +4,8 @@
 # Installation
 
 ## Docker
-
-Bevor Docker Engine installiert werden kann, muss das Docker apt repository wie folgt angelegt werden:
+Für das Projekt wird [Docker](https://www.docker.com/products/docker-desktop/) verwendet.
+Bevor die Docker Engine installiert werden kann, muss das Docker `apt repository` beim Raspberry Pi wie folgt angelegt werden:
 
 ```bash
 # Add Docker's official GPG key:
@@ -23,33 +23,33 @@ echo \
 sudo apt-get update
 ```
 
-Für das Verwenden wird [Docker](https://www.docker.com/products/docker-desktop/) verwendet und muss dementsprechend installiert werden. Dies kann beim Raspberry Pi durch folgenden Befehl installiert werden:
+Als nächstes muss Docker installiert werden. Dies kann beim Raspberry Pi durch folgenden Befehl gemacht werden:
 
 ```bash
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
 ```
 
-Alle folgenden Befehle, die mit 'docker-compose' beginnen, müssen in dem Ordner ausgeführt werden, der die `docker-compose.yml` beinhaltet.
+Alle folgenden Befehle, die mit `docker-compose` beginnen, müssen in dem Ordner ausgeführt werden, der die `docker-compose.yml` beinhaltet.
 
-Beim bauen vom Dockerfile konnte `dl-cdn.alpinelinux.org` nicht aufgelöst werden, dabei half es während der Bauens folgendem Befehl auszuführen:
+Beim Bauen vom Dockerfile konnte öfters `dl-cdn.alpinelinux.org` nicht aufgelöst werden, dabei half es, während des Bauens folgenden Befehl auszuführen:
 
 ```bash
 ping dl-cdn.alpinelinux.org
 ```
 
-Zum starten der Application wird folgender Befehl verwendet:
+Zum Starten des Projekt-Containers wird dann folgender Befehl verwendet:
 
 ```bash
 sudo docker-compose up -d
 ```
 
-Während der Entwicklung kann folgender Befehl verwendet werden:
+Während der Entwicklung kann folgender Befehl zum Starten des Containers verwendet werden:
 
 ```bash
 sudo docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
-Zum Beenden kann folgender Befehl verwendet werden:
+Zum Beenden des Containers kann folgender Befehl verwendet werden:
 
 ```bash
 sudo docker-compose down
@@ -59,9 +59,8 @@ sudo docker-compose down
 
 ### Passwort setzen
 
-Zum setzen des Passworts für einen $USERNAME, folgenden Befehl ausführen. Dieses Benutzername und Passwort müssen dann in der .env Datei eingefügt werden und entsprechend für die esp-clients angepasst werden.
+Zum Setzen des Passworts für einen `$USERNAME` muss der nachfolgende Befehl ausgeführt werden. Dieser Befehl muss im Ordner ausgeführt werden, in dem auch die `docker-compose.yml` Datei liegt. Der angegebene Benutzername und das dazugehörige Passwort müssen dann in der `.env`-Datei eingefügt werden und entsprechend für die `esp-clients` angepasst werden.
 
-Dieser Befehl muss im Ordner ausgeführt werden, in der auch die `docker-compose.yml` Datei liegt.
 
 ```bash
 sudo docker-compose exec mqtt mosquitto_passwd -c /mosquitto/config/mosquitto.passwd $USERNAME
@@ -75,44 +74,44 @@ Sollte die Passwortdatei noch nicht existieren, muss in der `mosquitto/conf/mosq
 
 ### Allgemeine Konfiguration Raspberry:
 
-Hostname: postmelder
+Hostname: `postmelder`
 
-Benutzername: administrator
+Benutzername: `administrator`
 
-Passwort: postmelder
+Passwort: `postmelder`
 
 [Online Anleitung](https://raspberrytips.com/access-point-setup-raspberry-pi/)
 
-1. Schritt WLAN aktivieren:
+1. WLAN aktivieren
 
 ```bash
   sudo raspi-config
 ```
 
-WLAN country Germany eingestellt
+  WLAN country Germany eingestellt
 
-2. Enable Wifi Interface im Networkmanager:
+2. Wifi-Interface im Networkmanager aktivieren
 
 ```bash
 sudo nmcli con add con-name hotspot ifname wlan0 type wifi ssid "Postmelder-Wifi"
 ```
 
-3. Set Access Point Security und Password:
+3. Accesspoint-Sicherheitseinstellungen und Passwort festlegen
 
 ```bash
 sudo nmcli con modify hotspot wifi-sec.key-mgmt wpa-psk
 sudo nmcli con modify hotspot wifi-sec.psk "postmelder"
 ```
 
-4. Configure to Run as Access Point:
+4. Als Accesspoint konfigurieren
 
 ```bash
 sudo nmcli con modify hotspot 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared
 ```
 
-5. Hide SSID
+5. SSID verstecken
 
-Mit folgendem Befehl kann die SSID versteckt werden. (true: versteckt; false: öffentlich)
+Mit folgendem Befehl kann die SSID versteckt werden. (`true`: versteckt; `false`: öffentlich)
 
 ```bash
 sudo nmcli con modify hotspot 802-11-wireless.hidden true
@@ -120,9 +119,13 @@ sudo nmcli con modify hotspot 802-11-wireless.hidden true
 
 Nach dem Ausführen des Befehls muss der RaspberryPi neugestartet werden, um die Änderung zu übernehmen.
 
-6. Weitere Einstellung
+```bash
+sudo reboot
+```
 
-Weitere Einstellung können mit folgenden Befehl getätigt werden:
+6. Weitere Einstellungen
+
+Weitere Einstellungen können mit folgendem Befehl getätigt werden:
 
 ```bash
 sudo nmtui
@@ -132,43 +135,43 @@ sudo nmtui
 
 ## ESP32 und Wägezelle
 
-Zum Einsatz kommt ein ESP32 DevkitC V4 und eine 5kg-Wägezelle mit dem HX711 Wägezellenverstärker. Als Statusanzeige dient eine RGB-LED.
+Zum Einsatz kommt ein ESP32 DevkitC V4 und eine 5kg-Wägezelle mit dem HX711 Wägezellenverstärker. Als Statusanzeige dient eine Common-Kathode RGB-LED.
 
 ![ESP32](https://github.com/binsim/postmelder/assets/148945984/db4f611c-a416-498d-8ce0-02bcdacfa60d)
 
 ## Raspberry Pi
 
-Zum Einsatz kommt ein Raspberry Pi 4B. Als Statusanzeige dient eine RGB-LED.
+Zum Einsatz kommt ein Raspberry Pi 4B. Als Statusanzeige dient eine Common-Kathode RGB-LED.
 
 ![RaspberryPi](https://github.com/binsim/postmelder/assets/148945984/aaae5b55-50ee-48cd-8737-964f64a09dfe)
 
 # Konfiguration und Anzeige der Postfächer
 
-Zur Konfiguration der Postfächer steht eine Website zur Verfügung. Diese ist erreichbar unter <http://POSTMELDER_IP:8080>. Desweiteren unterstüzt die Website eine automatische Erkennung von neuen Postfächern diese dann entsprechen konfiguriert werden können (siehe folgende Punkte).
+Zur Konfiguration der Postfächer steht eine Website zur Verfügung. Diese ist erreichbar unter <http://POSTMELDER_IP:8080> (Client und Raspberry Pi müssen im selben Netzwerk sein, z.B. Client im `Postmelder-Wifi`). Des Weiteren unterstüzt die Website eine automatische Erkennung von neuen Postfächern, welche dann entsprechend konfiguriert werden können (siehe folgende Punkte).
 
 ## E-Mail
 
-Zum senden von E-Mail muss ein SMTP-Sender hinzugefügt werden. Dies ist durch folgende Ansicht möglich.
+Zum Senden der E-Mail muss ein SMTP-Sender hinzugefügt werden. Dies ist in der folgenden Ansicht möglich.
 
 ![SMTP-Sender_config]()
 
 ## Postfach
 
-Des weiteren ist es möglich, den Test sowie den Titel des E-Mail Benachrichtigung für jedes einzele Postfach zu bearbeiten. Dies geschieht unter folgender Ansicht. Hierbei werden auch Variablen unterstüzt.
+Des Weiteren ist es möglich, den Text sowie den Titel der E-Mail Benachrichtigung für jedes einzelne Postfach zu bearbeiten. Dies geschieht in folgender Ansicht. Hierbei werden auch Variablen unterstüzt.
 
 | Variable | Wert |
 | -------- | ---- |
-| `{BOXNR}` | Die entsprechende Boxnumber des Postfach |
-| `{WEIGHT}` | Das im Moment des Sendens aktuelle Gewicht |
+| `{BOXNR}` | Die festgelegte Nummer des Postfachs |
+| `{WEIGHT}` | Das zum Sendezeitpunkt aktuelle Gewicht |
 | `{LASTEMPTIED}` | Der Zeitpunkt der letzten Entleerung im Zeitformat der Raspberry Pi's |
 | `{HISTORY}` | Die Gewichtsänderungen mit entsprechenden Zeitpunkten seit der letzten Entleerung |
 
-Um den Empfänger der E-Mail vor zu viele Nachrichten zu schützen ist es auch möglich, das Überprüfungsintervall zu ändern, hierfür gibt es folgende möglichkeiten
+Um die Empfänger der E-Mails vor zu vielen Nachrichten zu schützen, ist es auch möglich, das Überprüfungsintervall zu ändern. Dafür gibt es folgende Möglichkeiten:
 
 | Wert | Beschreibung |
 | ---- | ------------ |
-| `immediatly` | Es wird direkt nach dem das Postfach zu belegt wird |
-| `hourly` | Zur jeden vollen Stunde wird auf Statusänderung geprüft |
+| `immediatly` | Senden, direkt bei Belegen des Fachs |
+| `hourly` | Zur jeder vollen Stunde wird auf Statusänderung geprüft |
 | `daily` | Es wird täglich auf Statusänderung geprüft |
 | `weekly` | Es wird wöchentlich auf Statusänderung geprüft |
 
