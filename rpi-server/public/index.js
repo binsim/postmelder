@@ -176,8 +176,8 @@ function configureDevice(device) {
 	boxNumber.value = device.boxNumber;
 	checkInterval.value = device.checkInterval;
 	to.value = device.subscriber?.join('; ') ?? '';
-	subject.value = device.notificationTitle ?? '';
-	body.value = device.notificationBody ?? '';
+	subject.value = device.notificationTitle ?? NOTIFICATION_DEFAULT_TITLE;
+	body.value = device.notificationBody ?? NOTIFICATION_DEFAULT_BODY;
 
 	// Showing the dialog
 	configure_esp_device_dialog.showModal();

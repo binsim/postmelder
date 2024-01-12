@@ -3,7 +3,11 @@ import { config } from 'dotenv';
 import { MQTTService } from './mqttService';
 import { StateService } from './status';
 import { DEFAULT_SMTP_PORT, NotificationService } from './notification';
-import { CheckIntervals } from './EspDevice';
+import {
+	CheckIntervals,
+	NOTIFICATION_DEFAULT_BODY,
+	NOTIFICATION_DEFAULT_TITLE,
+} from './EspDevice';
 import { encrypt } from './encrypt';
 import { logger } from './logging';
 
@@ -57,6 +61,8 @@ app.get('/', (_: Request, res: Response) => {
 		constants: {
 			checkIntervals: CheckIntervals,
 			DEFAULT_SMTP_PORT,
+			NOTIFICATION_DEFAULT_BODY,
+			NOTIFICATION_DEFAULT_TITLE,
 		},
 		mailConf: {
 			...NotificationService.Instance.Config,

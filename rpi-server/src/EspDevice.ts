@@ -4,9 +4,9 @@ import { MQTTService } from './mqttService';
 import { logger } from './logging';
 
 const CONFIG_FILE = 'data/esp-clients.json';
-const NOTIFICATION_DEFAULT_TITLE =
+export const NOTIFICATION_DEFAULT_TITLE =
 	'Ihr Postfach mit der Nummer {BOXNR} ist belegt';
-const NOTIFICATION_DEFAULT_BODY =
+export const NOTIFICATION_DEFAULT_BODY =
 	'Aktuelles Gewicht: {WEIGHT}g\nLetzte Leerung: {LASTEMPTIED}\nHistorie: {HISTORY}';
 
 export const CheckIntervals = [
@@ -232,7 +232,7 @@ export class Device extends EventEmitter implements IDevice {
 		return this._device.notificationTitle ?? NOTIFICATION_DEFAULT_TITLE;
 	}
 	set notificationTitle(value) {
-		if (value === '') {
+		if (value === '' || value === NOTIFICATION_DEFAULT_TITLE) {
 			this._device.notificationTitle = undefined;
 			return;
 		}
@@ -242,7 +242,7 @@ export class Device extends EventEmitter implements IDevice {
 		return this._device.notificationBody ?? NOTIFICATION_DEFAULT_BODY;
 	}
 	set notificationBody(value) {
-		if (value === '') {
+		if (value === '' || value === NOTIFICATION_DEFAULT_BODY) {
 			this._device.notificationBody = undefined;
 			return;
 		}
