@@ -181,3 +181,19 @@ Um die Empfänger der E-Mails vor zu vielen Nachrichten zu schützen, ist es auc
 
 ![Postfach_config]()
 
+# Status-LEDS
+
+## ESP32
+| Farbe | Beschreibung |
+| ---- | ------------- |
+| aus | alles i.O. |
+| rot (blinkt) | <ul><li>Kommunikationsfehler zum Raspberry Pi</li><li>Verbindungsfehler zur Wägezelle</li></ul> |
+| grün (leuchtet) | Postfach ist belegt |
+| blau (blinkt) | <ul><li>Initialisierung nach dem Starten</li><li>Kalibrieren der Wägezelle</li></ul> |
+
+## Raspberry Pi
+| Farbe | Beschreibung |
+| ---- | ------------- |
+| rot | <ul><li>keine Internetverbindung</li><li>Verbindungsfehler MQTT</li><li>Fehler beim Senden der Email</li></ul> |
+| grün | alles i.O. |
+| blau | Kommunikationsfehler zu min. 1 ESP32 |
