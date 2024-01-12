@@ -40,11 +40,13 @@ export class StateService implements IStateService {
 
 					logger.warn('Internet connection lost');
 					this.internetConnectionError = true;
+					this.updateColor();
 				} else {
 					if (!this.internetConnectionError) return;
 
 					logger.info('Internet connection established');
 					this.internetConnectionError = false;
+					this.updateColor();
 				}
 			});
 		}, 60_000);
