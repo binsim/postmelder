@@ -128,8 +128,8 @@ bool Scale::weightChanged()
 	static unsigned long time;
 	static bool printed;
 
-	if (!this->scale.is_ready()) // quit if scale is not ready
-		return false;
+	//if (!this->scale.is_ready()) // quit if scale is not ready
+		//return false;
 
 	float newWeight = this->readWeight(); // read current weight from scale
 
