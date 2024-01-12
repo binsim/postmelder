@@ -372,14 +372,16 @@ export class NotificationService {
 			.replace(
 				new RegExp('{HISTORY}', 'g'),
 				device.history
-					? `\n${device.history
-							.map(
-								(el) =>
-									`${new Date(
-										el.timeStamp
-									).toLocaleString()}: ${el.weight.toLocaleString()}g`
-							)
-							.join('\n')}\n`
+					? device.history.length > 0
+						? `\n${device.history
+								.map(
+									(el) =>
+										`${new Date(
+											el.timeStamp
+										).toLocaleString()}: ${el.weight.toLocaleString()}g`
+								)
+								.join('\n')}\n`
+						: 'Keine Füllgeschichte vorhanden'
 					: '{HISTORY:undefined}'
 			);
 	}
