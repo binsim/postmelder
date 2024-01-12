@@ -92,7 +92,7 @@ app.get('/testMessage', async (req, res) => {
 	} catch (error) {
 		// Message can not be sent
 		logger.error(error);
-		res.sendStatus(400).send(
+		res.status(400).send(
 			'Error while sending test message, please check log file'
 		);
 		return;
