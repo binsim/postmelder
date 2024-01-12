@@ -232,12 +232,20 @@ export class Device extends EventEmitter implements IDevice {
 		return this._device.notificationTitle ?? NOTIFICATION_DEFAULT_TITLE;
 	}
 	set notificationTitle(value) {
+		if (value === '') {
+			this._device.notificationTitle = undefined;
+			return;
+		}
 		this._device.notificationTitle = value;
 	}
 	get notificationBody() {
 		return this._device.notificationBody ?? NOTIFICATION_DEFAULT_BODY;
 	}
 	set notificationBody(value) {
+		if (value === '') {
+			this._device.notificationBody = undefined;
+			return;
+		}
 		this._device.notificationBody = value;
 	}
 	get boxNumber() {
