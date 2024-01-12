@@ -352,6 +352,14 @@ export class NotificationService {
 		device: IDevice
 	): string | undefined {
 		if (msg === undefined) return undefined;
+
+		logger.info(
+			JSON.stringify({
+				history: device.history,
+				currentWeight: device.currentWeight,
+			})
+		);
+
 		return msg
 			.replace(
 				new RegExp('{BOXNR}', 'g'),
