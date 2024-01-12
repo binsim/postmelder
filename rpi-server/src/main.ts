@@ -217,8 +217,8 @@ app.post('/config-device', (req, res) => {
 	// Delete button has been pressed clear box number configuration
 	if (req.body.delete !== undefined) {
 		device.boxNumber = undefined;
-		device.notificationBody = undefined;
-		device.notificationTitle = undefined;
+		device.notificationBody = '';
+		device.notificationTitle = '';
 		device.subscriber = [];
 		device.checkInterval = undefined;
 		device.lastEmptied = undefined;
