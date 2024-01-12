@@ -163,6 +163,15 @@ export class Device extends EventEmitter implements IDevice {
 			case 'currentWeight':
 				// Received new weight
 				const newWeight = Number(payload.toString());
+
+				// Catch duplicate weight because of retained flag
+				if (newWeight === this.history.at(-1)?.weight) {
+					logger.info(
+						`${this._device.id} weight change has been ignored, because its value is the same (${newWeight}g)`
+					);
+					break;
+				}
+
 				// Get the current time for displaying it at the webinterface
 				const timeStamp = Date.now().valueOf();
 
