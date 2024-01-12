@@ -139,6 +139,10 @@ Zum Einsatz kommt ein ESP32 DevkitC V4 und eine 5kg-Wägezelle mit dem HX711 Wä
 
 ![ESP32](https://github.com/binsim/postmelder/assets/148945984/db4f611c-a416-498d-8ce0-02bcdacfa60d)
 
+Gibt die Waage unlogische Werte aus oder schwankt der Messwert ständig, liegt das wahrscheinlich an schlechtem elektrischen Kontakt der Wägezelle zum Verstärker. Das kann behoben werden, indem die gecrimpten Stecker an der Wägezelle nachgepresst werden.
+
+![nachpressen](https://github.com/binsim/postmelder/assets/148945984/3178d065-aa17-4d21-8830-6b275fb2cb63)
+
 ## Raspberry Pi
 
 Zum Einsatz kommt ein Raspberry Pi 4B. Als Statusanzeige dient eine Common-Kathode RGB-LED.
