@@ -367,7 +367,7 @@ export class NotificationService {
 			)
 			.replace(
 				new RegExp('{WEIGHT}', 'g'),
-				device.currentWeight
+				!isNaN(Number(device.currentWeight))
 					? device.currentWeight.toLocaleString() + 'g'
 					: '{WEIGHT:undefined}'
 			)
