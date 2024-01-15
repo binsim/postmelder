@@ -100,6 +100,7 @@ export class StateService implements IStateService {
 					this.deviceList.indexOf(device) as number,
 					1
 				);
+				this.updateColor();
 			}
 		});
 
@@ -107,6 +108,8 @@ export class StateService implements IStateService {
 		if (device.isCompletelyConfigured && !device.isOnline) {
 			this.deviceList.push(device);
 		}
+
+		this.updateColor();
 	}
 
 	/**
