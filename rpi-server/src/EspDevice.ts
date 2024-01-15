@@ -16,7 +16,14 @@ export const CheckIntervals = [
 	'weekly',
 ] as const;
 export type CheckInterval = (typeof CheckIntervals)[number];
-
+// TODO: Use JSON_Device and remove unnecessary elements
+export type UpdateDeviceType = {
+	boxNumber: number;
+	notificationBody: string;
+	notificationTitle: string;
+	subscriber: string[];
+	checkInterval: CheckInterval;
+};
 export type HistoryType = { timeStamp: number; weight: number };
 
 /**
@@ -96,7 +103,10 @@ export declare interface IDevice extends JSON_Device {
 			newVal: CheckInterval | undefined
 		) => void
 	): this;
-	on(event: 'delete', callback: (device: IDevice) => void): this;
+	on(
+		event: 'delete' | 'configurationUpdated',
+		callback: (device: IDevice) => void
+	): this;
 
 	// Unsubscribe of the events
 	off(
@@ -112,6 +122,7 @@ export declare interface IDevice extends JSON_Device {
 	): this;
 
 	delete(): void;
+	update(device: UpdateDeviceType): void;
 
 	calcScaleOffset(): Promise<number>;
 	calcScaleWeight(weight: number): Promise<number>;
@@ -333,6 +344,25 @@ export class Device extends EventEmitter implements IDevice {
 		MQTTService.Instance.updateDevice(this);
 
 		this.emit('delete', this);
+	}
+	update(device: UpdateDeviceType): void {
+		// Convert boxNumber to Number
+		let boxNumber = Number(device.boxNumber);
+		if (isNaN(boxNumber)) {
+			// Let user know that it can not be converted to a number
+			throw new Error('boxNumber is not a number');
+		}
+		// TODO: add Errors if something is wrong
+		this.boxNumber = boxNumber;
+		this.notificationBody = device.notificationBody;
+		this.notificationTitle = device.notificationTitle;
+		this.subscriber = device.subscriber;
+		this.checkInterval = device.checkInterval;
+
+		// Update changes in file
+		MQTTService.Instance.updateDevice(this);
+
+		this.emit('configurationUpdated', this);
 	}
 	public calcScaleOffset(): Promise<number> {
 		// Start calibration
