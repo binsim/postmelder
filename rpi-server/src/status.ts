@@ -94,6 +94,15 @@ export class StateService implements IStateService {
 			this.updateColor();
 		});
 
+		device.on('delete', (device) => {
+			if (!device.isOnline) {
+				this.deviceList.splice(
+					this.deviceList.indexOf(device) as number,
+					1
+				);
+			}
+		});
+
 		// Add device to not connected list
 		if (device.isCompletelyConfigured && !device.isOnline) {
 			this.deviceList.push(device);

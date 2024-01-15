@@ -96,6 +96,7 @@ export declare interface IDevice extends JSON_Device {
 			newVal: CheckInterval | undefined
 		) => void
 	): this;
+	on(event: 'delete', callback: (device: IDevice) => void): this;
 
 	// Unsubscribe of the events
 	off(
@@ -109,6 +110,8 @@ export declare interface IDevice extends JSON_Device {
 			newVal: CheckInterval | undefined
 		) => void
 	): this;
+
+	delete(): void;
 
 	calcScaleOffset(): Promise<number>;
 	calcScaleWeight(weight: number): Promise<number>;
@@ -299,9 +302,8 @@ export class Device extends EventEmitter implements IDevice {
 		return this.currentWeight > 0;
 	}
 	get isCompletelyConfigured() {
-		// TODO: Fill in all important configurations
 		return (
-			!!this._device.boxNumber &&
+			!isNaN(Number(this._device.boxNumber)) &&
 			Number(this._device.subscriber?.length) > 0
 		);
 	}
@@ -314,6 +316,23 @@ export class Device extends EventEmitter implements IDevice {
 		return {
 			...this._device,
 		};
+	}
+	public delete(): void {
+		this.boxNumber = undefined;
+		this.notificationBody = '';
+		this.notificationTitle = '';
+		this.subscriber = [];
+		this.checkInterval = undefined;
+		this.lastEmptied = undefined;
+		this.history.splice(0, this.history.length);
+
+		logger.info(
+			`device(${this.id}) as been deleted using the web interface`
+		);
+
+		MQTTService.Instance.updateDevice(this);
+
+		this.emit('delete', this);
 	}
 	public calcScaleOffset(): Promise<number> {
 		// Start calibration
