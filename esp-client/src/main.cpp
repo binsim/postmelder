@@ -47,13 +47,13 @@ void loop()
 
 	if (scale.weightChanged())
 	{
-		float weight = scale.getCurrentWeight();
+		String weight = String(scale.getCurrentWeight(), 1); // Gewicht auf eine Nachkommastelle runden
 
-		publish(PubTopic::WEIGHT_UPDATE, String(weight, 1), true);
-		state.setState(States::OCCUPIED, weight > 1);
+		publish(PubTopic::WEIGHT_UPDATE, weight, true);
+		state.setState(States::OCCUPIED, weight.toFloat() > OCCUPIED_THRESHOLD);
 	}
 
-	state.setState(States::SCALE_ERR, scale.isScaleError()); //true when scale has an error
+	state.setState(States::SCALE_ERR, scale.isScaleError()); // true when scale has an error
 	state.loop();
 }
 

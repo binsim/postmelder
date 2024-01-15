@@ -16,6 +16,8 @@
 #define SCALE_THRESHOLD 2 // value in grams, above or below which no change will be reported in grams
 #define SCALE_FINE_THRESHOLD 0.2
 
+#define OCCUPIED_THRESHOLD 1
+
 #define SCALE_DATA_PIN 32
 #define SCALE_CLOCK_PIN 33
 
