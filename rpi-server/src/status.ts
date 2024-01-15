@@ -129,6 +129,14 @@ export class StateService implements IStateService {
 		write(this.r_pin, this.externalError ? HIGH : LOW);
 		write(this.g_pin, this.isOk ? HIGH : LOW);
 		write(this.b_pin, this.internalError ? HIGH : LOW);
-		logger.info('Updated state colors');
+		logger.info(
+			`Updated color ${JSON.stringify({
+				'MQTT Error': this.mqttError,
+				'Transporter Error': this.transporterError,
+				'Internet Connection Error': this.internetConnectionError,
+				'Internal Error': this.internalError,
+				'Alles Ok': this.isOk,
+			})}`
+		);
 	}
 }
