@@ -13,12 +13,14 @@
 #define MQTT_PASS "postmelder"
 
 // -----------------------  Scale Settings --------------------------  //
-#define SCALE_THRESHOLD 1 // value in grams, above or below which no change will be reported in grams
+#define SCALE_THRESHOLD 2 // value in grams, above or below which no change will be reported in grams
+#define SCALE_FINE_THRESHOLD 0.2
+
 #define SCALE_DATA_PIN 32
 #define SCALE_CLOCK_PIN 33
 
-#define SCALE_WAIT_TIME 5000 //time in ms how long the scale waits after a weight change to report final weight
-#define SCALE_ERROR_HOPS 50 //number of measurements within which the weight has to settle in; othwise an error will be thrown (high number to not mistakenly throw an error)
+#define SCALE_WAIT_TIME 3000 // time in ms how long the scale waits after a weight change to report final weight
+#define SCALE_ERROR_HOPS 50  // number of measurements within which the weight has to settle in; othwise an error will be thrown (high number to not mistakenly throw an error)
 
 // -----------------------  State Settings --------------------------- //
 #define R_LED_PIN 0
