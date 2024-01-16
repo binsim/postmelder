@@ -23,7 +23,7 @@ public:
 	void saveScaleValues();
 	void cancelCalibration();
 
-	//Scale error check
+	// Scale error check
 	bool isScaleError();
 
 #ifdef WIPE
