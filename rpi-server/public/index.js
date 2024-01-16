@@ -206,7 +206,7 @@ async function testMessage(e, deviceId) {
 	// Trigger test message sending and get response
 	let response = await fetch('/testMessage?id=' + deviceId);
 
-	if (response.status() != 200) {
+	if (response.status != 200) {
 		alert(await response.text());
 		return;
 	}
