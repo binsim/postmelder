@@ -176,8 +176,8 @@ Um die Empfänger der E-Mails vor zu vielen Nachrichten zu schützen, ist es auc
 | ---- | ------------ |
 | `immediatly` | Senden, direkt bei Belegen des Fachs |
 | `hourly` | Zur jeder vollen Stunde wird auf Statusänderung geprüft |
-| `daily` | Es wird täglich auf Statusänderung geprüft |
-| `weekly` | Es wird wöchentlich auf Statusänderung geprüft |
+| `daily` | Es wird täglich zur 0-ten Stunde auf Statusänderung geprüft |
+| `weekly` | Es wird wöchentlich am Montag zur 0-ten Stunde auf Statusänderung geprüft |
 
 ![Postfach_config]()
 
