@@ -315,3 +315,32 @@ app.post('/calibrate/:clientID/:stage', async (req, res) => {
 app.listen(PORT, () => {
 	logger.info(`Server is running at http://localhost:${PORT}`);
 });
+
+process.stdin.resume(); // so the program will not close instantly
+
+function exitHandler(options: any, exitCode: any) {
+	if (options.cleanup) {
+		logger.info('Cleanup StateService');
+		StateService.Instance.cleanup();
+	}
+	// if (exitCode || exitCode === 0) console.log(exitCode);
+	logger.info(`exit code: ${exitCode}`);
+
+	if (options.exit) {
+		logger.error('Exiting Process');
+		process.exit();
+	}
+}
+
+// do something when app is closing
+process.on('exit', exitHandler.bind(null, { cleanup: true }));
+
+// catches ctrl+c event
+process.on('SIGINT', exitHandler.bind(null, { exit: true }));
+
+// catches "kill pid" (for example: nodemon restart)
+process.on('SIGUSR1', exitHandler.bind(null, { exit: true }));
+process.on('SIGUSR2', exitHandler.bind(null, { exit: true }));
+
+// catches uncaught exceptions
+process.on('uncaughtException', exitHandler.bind(null, { exit: true }));

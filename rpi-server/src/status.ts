@@ -10,6 +10,9 @@ export interface IStateService {
 
 	addDeviceListener(device: IDevice): void;
 	mqttOnlineStateChanged(isConnected: boolean): void;
+	transporterErrorChanged(isError: boolean): void;
+
+	cleanup(): void;
 }
 export class StateService implements IStateService {
 	private static _instance: StateService;
@@ -154,6 +157,12 @@ export class StateService implements IStateService {
 			logger.info('SMTP Transporter ok');
 		}
 		this.updateColor();
+	}
+
+	cleanup(): void {
+		write(this.r_pin, LOW);
+		write(this.g_pin, LOW);
+		write(this.b_pin, LOW);
 	}
 
 	/**
