@@ -1,7 +1,7 @@
 #include "Scale.h"
 
 #ifdef WIPE
-void Scale::wipeFlash()
+void Scale::wipeFlash() // wipes the flash memory if defined in configuration.h
 {
 	nvs_flash_erase();
 	nvs_flash_init();
@@ -44,10 +44,10 @@ float Scale::calibrateScaleOffset()
 	// Changes are directly applied to the scale
 
 	Serial.println("calculating scaleOffset");
-	scale.tare(20); // mean of 20 measurements
+	scale.tare(SCALE_SAMPLE_COUNT); // mean of x measurements
 	float offset = scale.get_offset();
 
-	Serial.print("scaleOffset: ");
+	Serial.print("scaleOffset: "); // print result to serial monitor
 	Serial.println(offset);
 	Serial.println();
 
@@ -60,8 +60,8 @@ float Scale::calibrateScaleFactor(unsigned int grams)
 	// Changes are directly applied to the scale
 	Serial.println("calculating scale conversion factor...");
 
-	scale.calibrate_scale(grams, 20);
-	float factor = scale.get_scale();
+	scale.calibrate_scale(grams, SCALE_SAMPLE_COUNT); // mean of x measurements
+	float factor = scale.get_scale();				  // get conversion factor
 
 	// print result to serial monitor
 	Serial.print("conversion factor: ");
@@ -107,20 +107,16 @@ void Scale::cancelCalibration()
 		scale.set_offset(this->offset);
 		scale.set_scale(this->factor);
 	}
-	else
-	{
-		// TODO: Handle case
-	}
 }
 
 float Scale::readWeight()
 {
-	return this->scale.get_units(20);
+	return this->scale.get_units(SCALE_SAMPLE_COUNT); // mean of x measurements
 }
 
 float Scale::getCurrentWeight()
 {
-	return this->weight;
+	return this->weight; // return current weight
 }
 
 bool Scale::weightChanged()
@@ -128,9 +124,6 @@ bool Scale::weightChanged()
 	static unsigned long time;
 	static bool printed;
 	float dynamicThreshold;
-
-	// if (!this->scale.is_ready()) // quit if scale is not ready
-	// return false;
 
 	float newWeight = this->readWeight(); // read current weight from scale
 
