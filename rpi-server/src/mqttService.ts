@@ -106,7 +106,7 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 
 		this._client.on('error', (err: Error) => {
 			this.isConnected = false;
-			// TODO: Incase of local execution docker is not running and errors are constantly loged
+			// TODO: Incase of local execution docker is not running and errors are constantly logged
 			// 		 catch same errors after printing it a x-th time and print it again rarely
 
 			// TODO: Handle Error

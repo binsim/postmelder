@@ -222,39 +222,25 @@ app.post('/config-device', (req, res) => {
 
 	// Delete button has been pressed clear box number configuration
 	if (req.body.delete !== undefined) {
-		device.boxNumber = undefined;
-		device.notificationBody = '';
-		device.notificationTitle = '';
-		device.subscriber = [];
-		device.checkInterval = undefined;
-		device.lastEmptied = undefined;
-		device.history.splice(0, device.history.length);
-
-		logger.info(
-			`device(${req.body.id}) as been deleted using the web interface`
-		);
-	} else {
-		// Convert boxNumber to Number
-		req.body.boxNumber = Number(req.body.boxNumber);
-		if (isNaN(req.body.boxNumber)) {
-			// Let user know that it can not be converted to a number
-			res.status(400).json({
-				...req.body,
-				error: 'boxNumber not a number',
-			});
-			return;
-		}
-
-		// Updating the device info
-		device.boxNumber = req.body.boxNumber;
-		device.notificationBody = req.body.body;
-		device.notificationTitle = req.body.subject;
-		device.subscriber = req.body.to.split('; ');
-		device.checkInterval = req.body.checkInterval;
+		device.delete();
+		// Everything went good return to homepage
+		res.status(200);
+		res.redirect('/');
+		return;
 	}
 
-	// Apply changes to the device
-	MQTTService.Instance.updateDevice(device);
+	try {
+		device.update({
+			boxNumber: req.body.boxNumber,
+			notificationBody: req.body.body,
+			notificationTitle: req.body.subject,
+			subscriber: req.body.to.split('; '),
+			checkInterval: req.body.checkInterval,
+		});
+	} catch (error) {
+		res.status(400).send(error);
+		return;
+	}
 
 	// Everything went good return to homepage
 	res.status(200);

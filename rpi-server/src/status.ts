@@ -77,10 +77,14 @@ export class StateService implements IStateService {
 	 */
 	addDeviceListener(device: IDevice) {
 		device.on('onlineChanged', (value) => {
+			if (!device.isCompletelyConfigured) return;
+
 			if (!value) {
+				// Add device to not connected list
 				this.deviceList.push(device);
 				logger.warn(`${device.id} got offline`);
 			} else {
+				// Remove device from not connected list
 				this.deviceList.splice(
 					this.deviceList.indexOf(device) as number,
 					1
@@ -89,6 +93,30 @@ export class StateService implements IStateService {
 			}
 			this.updateColor();
 		});
+
+		device.on('delete', (device) => {
+			if (!device.isOnline) {
+				this.deviceList.splice(
+					this.deviceList.indexOf(device) as number,
+					1
+				);
+				this.updateColor();
+			}
+		});
+		device.on('configurationUpdated', (device) => {
+			if (device.isCompletelyConfigured && !device.isOnline) {
+				this.deviceList.push(device);
+			}
+
+			this.updateColor();
+		});
+
+		// Add device to not connected list
+		if (device.isCompletelyConfigured && !device.isOnline) {
+			this.deviceList.push(device);
+		}
+
+		this.updateColor();
 	}
 
 	/**
