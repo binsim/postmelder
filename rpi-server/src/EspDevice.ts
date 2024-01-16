@@ -208,7 +208,9 @@ export class Device extends EventEmitter implements IDevice {
 					this.lastEmptied = timeStamp;
 					this.history.splice(0, this.history.length);
 					this.emit('occupiedChanged', false);
-					logger.info(`${this._device.id} has been emptied`);
+					logger.info(
+						`${this._device.id} has been emptied (${newWeight}g)`
+					);
 
 					this.messageAlreadySent = false;
 				} else {
@@ -269,9 +271,6 @@ export class Device extends EventEmitter implements IDevice {
 	}
 	set boxNumber(value) {
 		this._device.boxNumber = value;
-		logger.info(
-			`${this._device.id} box number changed to ${this._device.boxNumber}`
-		);
 	}
 	get checkInterval() {
 		return this._device.checkInterval;
