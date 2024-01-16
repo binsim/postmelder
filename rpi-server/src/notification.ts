@@ -122,14 +122,32 @@ export class NotificationService {
 	addDevice(device: IDevice) {
 		device.on('onlineChanged', async (state: boolean) => {
 			try {
-				await this.sendMessage(
+				const info = await this.sendMessage(
 					device.subscriber,
 					'Device online state',
 					`${device.id} has changed its online state to ${
 						device.isOnline ? 'online' : 'offline'
 					}`
 				);
-				logger.info(`${device.id} online state sent via notification`);
+
+				if (info.rejected.length > 0) {
+					logger.warn(
+						`${
+							device.id
+						} sent online state with rejected recipients [${info.rejected.join(
+							', '
+						)}]`
+					);
+				}
+				if (info.accepted.length > 0) {
+					logger.info(
+						`${
+							device.id
+						} sent online state successfully to [${info.accepted.join(
+							', '
+						)}]`
+					);
+				}
 			} catch (error) {
 				logger.error(error);
 			}
