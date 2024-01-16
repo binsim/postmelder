@@ -27,7 +27,11 @@ export const logger = createLogger({
 	level: process.env.LOG_LEVEL ?? 'debug',
 	format: winston.format.combine(
 		enumerateErrorFormat(),
-		winston.format.printf(({ level, message }) => `${level}: ${message}`)
+		winston.format.timestamp(),
+		winston.format.printf(
+			({ level, message, timestamp, ...metadata }) =>
+				`${new Date(timestamp).toLocaleString()}-[${level}]: ${message}`
+		)
 	),
 	transports,
 });

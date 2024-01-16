@@ -53,6 +53,7 @@ export class NotificationService {
 
 		// Create jobs to be executed when their time elapsed
 		// devices will join arrays according to their configuration
+		// this takes advantages of the cron-style
 		scheduleJob('0 * * * *', () => {
 			logger.info('HOURLY CHECK TRIGGERED');
 			this.checkForSendingMessage(this._hourlyDevices);
@@ -154,9 +155,6 @@ export class NotificationService {
 				case 'immediately':
 					// Check if notification is waiting for being sent and send it
 					if (device.isOccupied && !device.messageAlreadySent) {
-						logger.info(
-							`${device.id} sent message due to being occupied`
-						);
 						this.sendDeviceMessage(device).catch((err) => {
 							logger.error(err);
 						});
@@ -244,19 +242,17 @@ export class NotificationService {
 		// Log all rejected targets
 		if (info.rejected.length > 0) {
 			logger.warn(
-				`${
-					device.id
-				} send a message with rejected recipients [${info.rejected.join(
-					', '
-				)}]`
+				`${device.id} send occupied ${
+					isTestMessage ? 'test' : ''
+				}message with rejected recipients [${info.rejected.join(', ')}]`
 			);
 		}
 		// Log all accepted targets
 		if (info.accepted.length > 0) {
 			logger.info(
-				`${
-					device.id
-				} send a message successfully to [${info.accepted.join(', ')}]`
+				`${device.id} send occupied ${
+					isTestMessage ? 'test' : ''
+				}message successfully to [${info.accepted.join(', ')}]`
 			);
 		}
 
@@ -398,9 +394,6 @@ export class NotificationService {
 				`Checking device: ${device.id}: {occupied: ${device.isOccupied}, messageAlreadySent: ${device.messageAlreadySent}}`
 			);
 			if (device.isOccupied && !device.messageAlreadySent) {
-				logger.info(
-					`${device.id} sent message due to checkForSendingMessage`
-				);
 				this.sendDeviceMessage(device).catch((err) => {
 					logger.error(err);
 				});

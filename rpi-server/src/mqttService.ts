@@ -88,7 +88,7 @@ export class MQTTService extends EventEmitter implements IMQTTService {
 		// No need to connect if already connected
 		if (this.isConnected) {
 			logger.warn(
-				'Tried to reconnect ot mqtt broker. This method should only be called once'
+				'Tried to reconnect to mqtt broker. This method should only be called once'
 			);
 			return;
 		}
