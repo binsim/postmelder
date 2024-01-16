@@ -10,7 +10,7 @@ void Scale::wipeFlash() // wipes the flash memory if defined in configuration.h
 
 void Scale::init()
 {
-	preferences.begin("postmelder", true);				// start preferences
+	preferences.begin("postmelder", false);				// start preferences
 	this->scale.begin(SCALE_DATA_PIN, SCALE_CLOCK_PIN); // start scale
 
 	this->initialised = preferences.getBool("initialised"); // read flag from flash
@@ -93,7 +93,7 @@ void Scale::saveScaleValues()
 void Scale::cancelCalibration()
 {
 	// Get values from before calibration
-	preferences.begin("postmelder", true);
+	preferences.begin("postmelder", false);
 
 	this->factor = preferences.getFloat("scaleValue", 0);
 	this->offset = preferences.getLong("scaleOffset", 0);
