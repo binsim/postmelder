@@ -45,7 +45,9 @@ void loop()
 
 	state.setState(States::COMMUNICATION_ERR, !wiFiConnected || !isServerOnline || !connectedWithNode);
 
-	if (scale.weightChanged())
+	state.setState(States::SCALE_ERR, scale.isScaleError()); // true when scale has an error
+
+	if (scale.weightChanged() && !state.isScaleError()) // publish weight on weight change and when no scale malfunction is present
 	{
 		String weight = String(scale.getCurrentWeight(), 1); // Gewicht auf eine Nachkommastelle runden
 
@@ -53,7 +55,6 @@ void loop()
 		state.setState(States::OCCUPIED, weight.toFloat() > OCCUPIED_THRESHOLD);
 	}
 
-	state.setState(States::SCALE_ERR, scale.isScaleError()); // true when scale has an error
 	state.loop();
 }
 

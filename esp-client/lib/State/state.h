@@ -20,12 +20,12 @@ public:
 
 	void setState(States state, bool isActive);
 	void loop();
+	bool isScaleError();
 
 private:
 	bool isInit();
 	bool isError();
 	bool isCommunicationError();
-	bool isScaleError();
 	bool isOccupied();
 	bool isScaleCalibration();
 	void setupLEDs();
