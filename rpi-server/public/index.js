@@ -204,8 +204,14 @@ async function testMessage(e, deviceId) {
 	rejected_destinations_ul.innerHTML = '';
 
 	// Trigger test message sending and get response
-	const response = await (await fetch('/testMessage?id=' + deviceId)).json();
+	let response = await fetch('/testMessage?id=' + deviceId);
 
+	if (response.status() != 200) {
+		alert(await response.text());
+		return;
+	}
+
+	response = await response.json();
 	// Remove loader
 	loader.style.display = 'none';
 
