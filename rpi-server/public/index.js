@@ -208,6 +208,7 @@ async function testMessage(e, deviceId) {
 
 	if (response.status != 200) {
 		alert(await response.text());
+		testmessage_response_dialog.close();
 		return;
 	}
 
