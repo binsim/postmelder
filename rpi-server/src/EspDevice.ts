@@ -289,7 +289,6 @@ export class Device extends EventEmitter implements IDevice {
 	}
 	private set lastEmptied(value) {
 		this._device.lastEmptied = value;
-		logger.info(`${this._device.id} has been emptied`);
 	}
 	get history() {
 		return this._device.history ?? [];
