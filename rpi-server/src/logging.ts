@@ -30,11 +30,7 @@ export const logger = createLogger({
 		winston.format.timestamp(),
 		winston.format.printf(
 			({ level, message, timestamp, ...metadata }) =>
-				`${new Date(
-					timestamp
-				).toLocaleString()}-[${level}]: ${message} ${JSON.stringify(
-					metadata
-				)}`
+				`${new Date(timestamp).toLocaleString()}-[${level}]: ${message}`
 		)
 	),
 	transports,
