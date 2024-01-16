@@ -168,9 +168,9 @@ export class StateService implements IStateService {
 				'MQTT Error': this.mqttError,
 				'Transporter Error': this.transporterError,
 				'Internet Connection Error': this.internetConnectionError,
-				'Internal Error': `${this.internalError} [${JSON.stringify(
-					this.deviceList.join(', ')
-				)}]`,
+				'Internal Error': `${this.internalError} [${this.deviceList
+					.map((device) => device.id)
+					.join(', ')}]`,
 				'Alles Ok': this.isOk,
 			})}`
 		);
