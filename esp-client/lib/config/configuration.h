@@ -38,4 +38,6 @@
 #define LEDC_ON_DUTY 100
 #define LEDC_OFF_DUTY 0
 
+#define STATE_INIT_COUNT 20 // number of loops to wait until the state is set to not init anymore
+
 #endif // L_CONFIG_H
