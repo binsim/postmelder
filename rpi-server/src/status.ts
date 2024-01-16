@@ -76,46 +76,52 @@ export class StateService implements IStateService {
 	 * @param device Device to add
 	 */
 	addDeviceListener(device: IDevice) {
+		// Show online state of configured devices
+
 		device.on('onlineChanged', (value) => {
-			if (!device.isCompletelyConfigured) return;
+			if (!device.isCompletelyConfigured) {
+				logger.info(
+					`${device.id} online state ignored for status because it is not completely configured`
+				);
+				return;
+			}
 
 			if (!value) {
-				// Add device to not connected list
-				this.deviceList.push(device);
-				logger.warn(`${device.id} got offline`);
+				this.addDeviceToList(device);
 			} else {
-				// Remove device from not connected list
-				this.deviceList.splice(
-					this.deviceList.indexOf(device) as number,
-					1
-				);
-				logger.info(`${device.id} got online`);
+				this.removeDeviceFromList(device);
 			}
-			this.updateColor();
 		});
 
+		// Remove device if it got deleted
 		device.on('delete', (device) => {
 			if (!device.isOnline) {
-				this.deviceList.splice(
-					this.deviceList.indexOf(device) as number,
-					1
-				);
-				this.updateColor();
+				this.removeDeviceFromList(device);
 			}
 		});
+		// Remove device if it has been reconfigured to get if it is added
 		device.on('configurationUpdated', (device) => {
 			if (device.isCompletelyConfigured && !device.isOnline) {
-				this.deviceList.push(device);
+				this.addDeviceToList(device);
 			}
-
-			this.updateColor();
 		});
 
 		// Add device to not connected list
 		if (device.isCompletelyConfigured && !device.isOnline) {
-			this.deviceList.push(device);
+			this.addDeviceToList(device);
 		}
+	}
 
+	private removeDeviceFromList(device: IDevice) {
+		// Remove device from connected list
+		this.deviceList.splice(this.deviceList.indexOf(device) as number, 1);
+		logger.info(`Removed ${device.id} from offline devices`);
+		this.updateColor();
+	}
+	private addDeviceToList(device: IDevice) {
+		// Add device to not connected list
+		this.deviceList.push(device);
+		logger.warn(`Added ${device.id} to offline devices`);
 		this.updateColor();
 	}
 
