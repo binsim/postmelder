@@ -376,7 +376,7 @@ export class Device extends EventEmitter implements IDevice {
 				reject(
 					'Timeout for calcScaleOffset elapsed, response took to long'
 				);
-			}, 10_000);
+			}, 15_000);
 
 			MQTTService.Instance.publish(
 				`/${this._device.id}/command/CalcOffset`,
@@ -405,7 +405,7 @@ export class Device extends EventEmitter implements IDevice {
 				reject(
 					'Timeout for calcScaleOffset elapsed, response took to long'
 				);
-			}, 10_000);
+			}, 15_000);
 
 			MQTTService.Instance.publish(
 				`/${this._device.id}/command/CalibrateScale`,
